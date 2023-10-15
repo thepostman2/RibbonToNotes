@@ -14,6 +14,8 @@
 #define MAX_NOTES 12
 #define MAX_SPLITS MAX_NOTES-1
 
+const int noteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,12};
+
 //==============================================================================
 /**
 */
@@ -64,10 +66,11 @@ public:
     void SentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time);
 
     std::atomic<float>* midiCC = nullptr;
-    int numberOfZones;
-    std::atomic<float>*  noteVelocity = nullptr;
+    std::atomic<float>* numberOfZones = nullptr;
+    std::atomic<float>* noteVelocity = nullptr;
+    std::atomic<float>* octaves = nullptr;
     int splitValues[MAX_NOTES+1];
-    int noteValues[MAX_NOTES];
+    std::atomic<float>* noteValues[MAX_NOTES];
     int notePressedChannel[MAX_NOTES];
 
 private:

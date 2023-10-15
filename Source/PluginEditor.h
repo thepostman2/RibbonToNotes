@@ -57,8 +57,12 @@ private:
 
     juce::Slider sldMidiCC;
     std::unique_ptr<SliderAttachment> sldMidiCCAttachment;
+    std::unique_ptr<SliderAttachment> sldNumberOfZonesAttachment;
     std::unique_ptr<SliderAttachment> sldVelocityAttachment;
+    std::unique_ptr<SliderAttachment> sldOctaveAttachment;
+    std::unique_ptr<ComboBoxAttachment> cmbNotesAttachment[MAX_NOTES];
 
+    
     juce::Label lblMidiCC;
     juce::Slider sldNumberOfZones;
     juce::Label lblNumberOfZones;

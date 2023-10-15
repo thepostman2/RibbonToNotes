@@ -11,6 +11,46 @@
 #include <Carbon/Carbon.h>
 
 //==============================================================================
+juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout params;
+
+
+    int j = MAX_NOTES+1;
+    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"midicc",j++},
+                                                            "MidiCC",
+                                                            0.0f,
+                                                            127.0f,
+                                                           22.0f));
+
+    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"numberofzones",j++},
+                                                           "NumberOfZones",
+                                                           0,
+                                                           12,
+                                                           6));
+
+    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"velocity",j++},
+                                                            "Velocity",
+                                                            0.0f,
+                                                            1.0f,
+                                                           90.0/127.0));
+
+    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"octaves",j++},
+                                                           "Octaves",
+                                                           0,
+                                                           8,
+                                                           2));
+    for(int i=0;i<MAX_NOTES;i++)
+    {
+        params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),i},
+                                                               "Notes",
+                                                               0,
+                                                               MAX_NOTES-1,
+                                                               noteOrder[i]));
+    }
+    return params;
+}
+//==============================================================================
 RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
 : AudioProcessor (BusesProperties()
 #if ! JucePlugin_IsMidiEffect
@@ -22,23 +62,18 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
                   )
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-, parameters(*this, nullptr, juce::Identifier("RibbonToNotes"),
-             {
-    std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"midicc",1},
-                                                            "MidiCC",
-                                                            0.0f,
-                                                            127.0f,
-                                                            22.0f),
-    std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"velocity",2},
-                                                            "Velocity",
-                                                            0.0f,
-                                                            1.0f,
-                                                            90.0/127.0)
-            })
+, parameters(*this, nullptr, juce::Identifier("RibbonToNotes"), CreateParameterLayout())
 #endif
 {
     midiCC = parameters.getRawParameterValue("midicc");
+    numberOfZones = parameters.getRawParameterValue("numberofzones");
     noteVelocity = parameters.getRawParameterValue("velocity");
+    octaves = parameters.getRawParameterValue("octaves");
+    for(int i=0;i<MAX_NOTES;i++)
+    {
+        noteValues[i] = parameters.getRawParameterValue("notes" + std::to_string(i));
+    }
+
     int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
     for(int i=0;i<cnt;i++)
     {
@@ -48,6 +83,7 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     splitValues[0]=0;
 }
 
+//==============================================================================
 RibbonToNotesAudioProcessor::~RibbonToNotesAudioProcessor()
 {
 }
@@ -159,7 +195,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     jassert (buffer.getNumChannels() == 0);
     
     // however we use the buffer to get timing information
-    auto numSamples = buffer.getNumSamples();
+    //auto numSamples = buffer.getNumSamples();
     
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
@@ -182,7 +218,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         {
             auto ccval = message.getControllerValue();
             auto channel = message.getChannel();
-            for(int i=0 ; i < numberOfZones ;i++)
+            for(int i=0 ; i < *numberOfZones ;i++)
             {
                 if(ccval < splitValues[i])
                 {
@@ -200,7 +236,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
                         SentNotesOff(processedMidi, i, time);
                         //create new noteOn
                         message = juce::MidiMessage::noteOn(channel,
-                                                            noteValues[i],
+                                                            *noteValues[i],
                                                             *noteVelocity);
                         notePressedChannel[i] = channel;
                     }
@@ -225,9 +261,9 @@ void RibbonToNotesAudioProcessor::SentNotesOff(juce::MidiBuffer& processedMidi, 
         //if note was pressed, the channel was set.
         if(notePressedChannel[i]>0 && i!=exceptNote)
         {
-            auto message = juce::MidiMessage::noteOff(notePressedChannel[i],noteValues[i]);
+            auto message = juce::MidiMessage::noteOff(notePressedChannel[i],*noteValues[i]);
             processedMidi.addEvent(message, time+10*i);
-            auto message2 = juce::MidiMessage::noteOn(notePressedChannel[i], noteValues[i], 0.0f);
+            auto message2 = juce::MidiMessage::noteOn(notePressedChannel[i], *noteValues[i], 0.0f);
             processedMidi.addEvent(message2, time+20*i);
             notePressedChannel[i]=-1;
         }
