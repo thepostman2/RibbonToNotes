@@ -72,12 +72,12 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     for(int i=0;i<MAX_NOTES;i++)
     {
         noteValues[i] = parameters.getRawParameterValue("notes" + std::to_string(i));
+        notePressedChannel[i]=-1;
     }
 
-    int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
-    for(int i=0;i<cnt;i++)
+    //int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
+    for(int i=0;i<MAX_SPLITS;i++)
     {
-        notePressedChannel[i]=-1;
         splitValues[i]=128;
     }
     splitValues[0]=0;
