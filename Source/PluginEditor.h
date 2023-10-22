@@ -75,12 +75,12 @@ private:
     juce::ComboBox cmbNotes[MAX_NOTES];
     juce::Slider sldArNoteNumber[MAX_NOTES];
     juce::Label lblArNoteNumber[MAX_NOTES];
-    juce::Slider sldArSplitValues[MAX_NOTES];
-    juce::Label lblArSplitValues[MAX_NOTES];
+    juce::Slider sldArSplitValues[MAX_SPLITS];
+    juce::Label lblArSplitValues[MAX_SPLITS];
     
     int numberOfZones=6;
     int numberOfSplits(){return numberOfZones-1;}
-    int noteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,12};
+    int noteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessorEditor)
 };

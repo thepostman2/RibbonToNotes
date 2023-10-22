@@ -71,25 +71,24 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblOctave.attachToComponent(&sldOctave, false);
     lblOctave.setJustificationType(juce::Justification::centred);
 
-    for(int i=0;i<MAX_NOTES;i++)
+    for(int i=0;i<MAX_SPLITS;i++)
     {
         bool enabled = true;
         if(i>=numberOfZones)
         {
             enabled=false;
         }
-        //cmbNotes[i] = new juce::ComboBox;
-        addAndMakeVisible(cmbNotes[i]);
-        cmbNotesAttachment[i].reset(new ComboBoxAttachment(valueTreeState, "notes" + std::to_string(i), cmbNotes[i]));
-        cmbNotes[i].addItemList(notesArray, 1);
-        cmbNotes[i].setSelectedId(*audioProcessor.noteValues[i]);
-        cmbNotes[i].setEnabled(enabled);
-
-        if(i < MAX_NOTES-1)
+        if(i<MAX_NOTES)
         {
-            CreateSlider(sldArSplitValues[i]);
-            addAndMakeVisible(lblArSplitValues[i]);
+            //cmbNotes[i] = new juce::ComboBox;
+            addAndMakeVisible(cmbNotes[i]);
+            cmbNotesAttachment[i].reset(new ComboBoxAttachment(valueTreeState, "notes" + std::to_string(i), cmbNotes[i]));
+            cmbNotes[i].addItemList(notesArray, 1);
+            cmbNotes[i].setSelectedId(*audioProcessor.noteValues[i]);
+            cmbNotes[i].setEnabled(enabled);
         }
+        CreateSlider(sldArSplitValues[i]);
+        addAndMakeVisible(lblArSplitValues[i]);
     }
 }
 
@@ -97,24 +96,23 @@ void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
 {
     int stepSize = 127/numberOfZones;
     bool enabled = true;
-    for(int i=0;i<MAX_NOTES;i++)
+    for(int i=0;i<MAX_SPLITS;i++)
     {
         if(i>=numberOfZones)
         {
             enabled=false;
         }
-
-//        cmbNotes[i].addItemList(notesArray, 1);
-//        cmbNotes[i].setSelectedId(noteOrder[i]);
-//        cmbNotes[i].setEnabled(enabled);
-        if(i < MAX_NOTES-1)
+        if(i<MAX_NOTES)
         {
-            int value = enabled? 1 + i * stepSize:0;
-            if(i>=numberOfZones) value = 128;
-            sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
-            sldArSplitValues[i].setValue(value);
-            sldArSplitValues[i].setEnabled(enabled);
+            cmbNotes[i].addItemList(notesArray, 1);
+            cmbNotes[i].setSelectedId(noteOrder[i]);
+            cmbNotes[i].setEnabled(enabled);
         }
+        int value = enabled? 1 + i * stepSize:0;
+        if(i>=numberOfZones) value = 128;
+        sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
+        sldArSplitValues[i].setValue(value);
+        sldArSplitValues[i].setEnabled(enabled);
     }
 }
 
@@ -148,11 +146,14 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     sldNumberOfZones.addListener (this);
     sldVelocity.addListener(this);
     sldOctave.addListener(this);
-    for(int i=0;i<MAX_NOTES;i++)
+    for(int i=0;i<MAX_SPLITS;i++)
     {
-        sldArNoteNumber[i].addListener(this);
+        if(i<MAX_NOTES)
+        {
+            sldArNoteNumber[i].addListener(this);
+            cmbNotes[i].addListener(this);
+        }
         sldArSplitValues[i].addListener(this);
-        cmbNotes[i].addListener(this);
     }
 }
 
@@ -199,13 +200,16 @@ void RibbonToNotesAudioProcessorEditor::resized()
     sldOctave.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
 
     int row = 0;
-    for(int i=0;i<MAX_NOTES;i++)
+    for(int i=0;i<MAX_SPLITS;i++)
     {
         if(i== MAX_NOTES/2)
         {
             row++;
         }
-        cmbNotes[i].setBounds(leftMargin + 0.5 * controlWidth + (i-row*6) * (leftMargin + controlWidth), top2 + row * topOffsetRow2, controlWidth, textHeight);
+        if(i<MAX_NOTES)
+        {
+            cmbNotes[i].setBounds(leftMargin + 0.5 * controlWidth + (i-row*6) * (leftMargin + controlWidth), top2 + row * topOffsetRow2, controlWidth, textHeight);
+        }
         sldArSplitValues[i].setBounds(leftMargin + (i-row*6) * (leftMargin + controlWidth), top3 + row * topOffsetRow2, controlWidth, vsliderHeight);
         sldArSplitValues[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
     }
@@ -215,9 +219,10 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
     int maxNote = 0;
     int note = 0;
     int addOctaves=0;
-    for(int i=0 ; i < numberOfZones; i++)
+    for(int i=0 ; i < MAX_NOTES; i++)
     {
         note = cmbNotes[i].getSelectedId();
+        //if the notevalue is lower then the highest note, just add an octave to it.
         if(note <= maxNote)
         {
             addOctaves++;
@@ -237,8 +242,8 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
 void RibbonToNotesAudioProcessorEditor::SyncSliderValues()
 {
     auto zones = GetNumberOfZones();
-    //audioProcessor.numberOfZones = zones;
-    
+    *audioProcessor.numberOfZones = zones;
+
     if(numberOfZones!=zones)
     {
         numberOfZones=zones;
@@ -253,7 +258,7 @@ void RibbonToNotesAudioProcessorEditor::SyncSliderValues()
 
 void RibbonToNotesAudioProcessorEditor::SyncComboBoxValues()
 {
-    for(int i=0 ; i < numberOfZones; i++)
+    for(int i=0 ; i < MAX_NOTES; i++)
     {
         noteOrder[i] = cmbNotes[i].getSelectedId();
     }

@@ -46,7 +46,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                "Notes",
                                                                0,
                                                                MAX_NOTES-1,
-                                                               noteOrder[i]));
+                                                               defaultNoteOrder[i]));
     }
     return params;
 }
