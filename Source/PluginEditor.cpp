@@ -180,7 +180,7 @@ void RibbonToNotesAudioProcessorEditor::resized()
     // subcomponents in your editor..
     auto leftMargin = getWidth() * 0.02;
     auto topMargin = getHeight() * 0.02;
-    auto controlWidth = (getWidth() / (0.5 * MAX_NOTES)) - 2 * leftMargin;
+    auto controlWidth = (getWidth() / (0.5 * MAX_NOTES + 0.5)) - 2 * leftMargin;
     int textHeight = 22;
     auto dialHeight = textHeight + controlWidth;
     auto vsliderHeight = 2*textHeight;
