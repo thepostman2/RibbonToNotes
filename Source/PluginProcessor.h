@@ -13,6 +13,7 @@
 
 #define MAX_NOTES 12
 #define MAX_SPLITS MAX_NOTES+1
+#define DEFAULT_NUMBEROFZONES 6
 
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 
@@ -69,7 +70,7 @@ public:
     std::atomic<float>* numberOfZones = nullptr;
     std::atomic<float>* noteVelocity = nullptr;
     std::atomic<float>* octaves = nullptr;
-    int splitValues[MAX_SPLITS];
+    std::atomic<float>* splitValues[MAX_SPLITS];
     std::atomic<float>* noteValues[MAX_NOTES];
     int notePressedChannel[MAX_NOTES];
 

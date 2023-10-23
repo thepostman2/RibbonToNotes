@@ -118,12 +118,12 @@ void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
 
 void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges()
 {
-    int stepSize = (audioProcessor.splitValues[numberOfZones-1] - audioProcessor.splitValues[0])/(numberOfZones-1);
+    int stepSize = ((*audioProcessor.splitValues[numberOfZones-1]) - (*audioProcessor.splitValues[0]))/(numberOfZones-1);
     //bool enabled = true;
     for(int i=1;i<numberOfZones-1;i++)
     {
-        int value = audioProcessor.splitValues[0] + i * stepSize;
-        audioProcessor.splitValues[i] = value;
+        int value = (*audioProcessor.splitValues[0]) + i * stepSize;
+        *audioProcessor.splitValues[i] = value;
         sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
         sldArSplitValues[i].setValue(value);
     }
@@ -231,10 +231,10 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
         maxNote = note;
         if(i<numberOfZones)
         {
-            audioProcessor.splitValues[i] = sldArSplitValues[i].getValue();
+            *audioProcessor.splitValues[i] = sldArSplitValues[i].getValue();
         }
         else
-            audioProcessor.splitValues[i] = 128;
+            *audioProcessor.splitValues[i] = 128;
     }
 }
 

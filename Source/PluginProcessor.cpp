@@ -40,13 +40,30 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                            0,
                                                            8,
                                                            2));
-    for(int i=0;i<MAX_NOTES;i++)
+    int stepSize = 127/DEFAULT_NUMBEROFZONES;
+    bool enabled = true;
+
+    for(int i=0;i<MAX_SPLITS;i++)
     {
-        params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),i},
-                                                               "Notes",
-                                                               0,
-                                                               MAX_NOTES-1,
-                                                               defaultNoteOrder[i]));
+        if(i<MAX_NOTES)
+        {
+            params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),i},
+                                                                 "Notes",
+                                                                 0,
+                                                                 MAX_NOTES-1,
+                                                                 defaultNoteOrder[i]));
+        }
+        if(i >= DEFAULT_NUMBEROFZONES)
+        {
+            enabled=false;
+        }
+        int defaultsplit = enabled? 1 + i * stepSize:0;
+        if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
+        params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"splits" + std::to_string(i),100+i},
+                                                             "Splits",
+                                                             0,
+                                                             128,
+                                                             defaultsplit));
     }
     return params;
 }
@@ -78,9 +95,9 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     //int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        splitValues[i]=128;
+        splitValues[i] = parameters.getRawParameterValue("splits" + std::to_string(0));
     }
-    splitValues[0]=0;
+    *splitValues[0]=0;
 }
 
 //==============================================================================
@@ -220,14 +237,14 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
             auto channel = message.getChannel();
             for(int i=0 ; i < *numberOfZones ;i++)
             {
-                if(ccval < splitValues[i])
+                if(ccval < *splitValues[i])
                 {
                     //if ccval is 0, then stop any note from sounding
                     SentNotesOff(processedMidi,-1,time);
                     break;
                 }
                 //if ccval is in range according to spliValues array, start the note
-                if(ccval < splitValues[i+1])
+                if(ccval < *splitValues[i+1])
                 {
                     //only do something if the same note is not already pressed
                     if(notePressedChannel[i] != channel)
