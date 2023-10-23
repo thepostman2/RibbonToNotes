@@ -61,6 +61,7 @@ private:
     std::unique_ptr<SliderAttachment> sldVelocityAttachment;
     std::unique_ptr<SliderAttachment> sldOctaveAttachment;
     std::unique_ptr<ComboBoxAttachment> cmbNotesAttachment[MAX_NOTES];
+    std::unique_ptr<SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
 
     
     juce::Label lblMidiCC;

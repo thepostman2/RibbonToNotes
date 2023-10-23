@@ -95,7 +95,7 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     //int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        splitValues[i] = parameters.getRawParameterValue("splits" + std::to_string(0));
+        splitValues[i] = parameters.getRawParameterValue("splits" + std::to_string(i));
     }
     *splitValues[0]=0;
 }
