@@ -227,7 +227,7 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
         {
             addOctaves++;
         }
-        *audioProcessor.noteValues[i] = note + 24 + (sldOctave.getValue()+addOctaves)*12;
+        *audioProcessor.noteValues[i] = note + 23 + (sldOctave.getValue()+addOctaves)*12;
         maxNote = note;
         if(i<numberOfZones)
         {
