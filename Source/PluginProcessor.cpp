@@ -235,7 +235,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         {
             auto ccval = message.getControllerValue();
             auto channel = message.getChannel();
-            for(int i=0 ; i < *numberOfZones ;i++)
+            for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
             {
                 if(ccval < *splitValues[i])
                 {

@@ -17,7 +17,6 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor (RibbonToNo
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (600, 400);
-    numberOfZones = 6;//sizeof(noteOrder)/sizeof(noteOrder[0]);
     CreateGui();
     SetSplitRanges();
     SyncSliderValues();
@@ -66,7 +65,6 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblVelocity.attachToComponent(&sldVelocity, false);
     lblVelocity.setJustificationType(juce::Justification::centred);
 
-    
     CreateDial(sldOctave);
     sldOctaveAttachment.reset(new SliderAttachment(valueTreeState, "octaves", sldOctave));
     sldOctave.setRange(0, 8,1.0);
@@ -74,11 +72,12 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblOctave.setText("Octave", juce::dontSendNotification);
     lblOctave.attachToComponent(&sldOctave, false);
     lblOctave.setJustificationType(juce::Justification::centred);
+    
 
     for(int i=0;i<MAX_SPLITS;i++)
     {
         bool enabled = true;
-        if(i>=numberOfZones)
+        if(i>=(int)(*audioProcessor.numberOfZones))
         {
             enabled=false;
         }
@@ -88,7 +87,7 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
             addAndMakeVisible(cmbNotes[i]);
             cmbNotesAttachment[i].reset(new ComboBoxAttachment(valueTreeState, "notes" + std::to_string(i), cmbNotes[i]));
             cmbNotes[i].addItemList(notesArray, 1);
-            cmbNotes[i].setSelectedId(*audioProcessor.noteValues[i]);
+            cmbNotes[i].setSelectedId(((int)*audioProcessor.noteValues[i]) % 12);
             cmbNotes[i].setEnabled(enabled);
         }
         CreateSlider(sldArSplitValues[i]);
@@ -101,17 +100,17 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
 
 void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
 {
-    int stepSize = 127/numberOfZones;
+    int stepSize = 127/((int)(*audioProcessor.numberOfZones));
     bool enabled = true;
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        enabled = i < numberOfZones;
+        enabled = i < ((int)(*audioProcessor.numberOfZones));
         if(i<MAX_NOTES)
         {
             cmbNotes[i].setEnabled(enabled);
         }
         int value = enabled? 1 + i * stepSize:0;
-        if(i>=numberOfZones) value = 128;
+        if(i>=((int)(*audioProcessor.numberOfZones))) value = 128;
         sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
         sldArSplitValues[i].setValue(value);
         sldArSplitValues[i].setEnabled(enabled);
@@ -126,9 +125,9 @@ void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
 
 void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges()
 {
-    int stepSize = ((*audioProcessor.splitValues[numberOfZones-1]) - (*audioProcessor.splitValues[0]))/(numberOfZones-1);
+    int stepSize = ((*audioProcessor.splitValues[((int)(*audioProcessor.numberOfZones))-1]) - (*audioProcessor.splitValues[0]))/(((int)(*audioProcessor.numberOfZones))-1);
     //bool enabled = true;
-    for(int i=1;i<numberOfZones-1;i++)
+    for(int i=1;i<((int)(*audioProcessor.numberOfZones))-1;i++)
     {
         int value = (*audioProcessor.splitValues[0]) + i * stepSize;
         *audioProcessor.splitValues[i] = value;
@@ -245,7 +244,7 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
         }
         *audioProcessor.noteValues[i] = note + 23 + (sldOctave.getValue()+addOctaves)*12;
         maxNote = note;
-        if(i<numberOfZones)
+        if(i<((int)(*audioProcessor.numberOfZones)))
         {
             *audioProcessor.splitValues[i] = sldArSplitValues[i].getValue();
         }
@@ -258,11 +257,10 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
 void RibbonToNotesAudioProcessorEditor::SyncSliderValues()
 {
     auto zones = GetNumberOfZones();
-    *audioProcessor.numberOfZones = zones;
 
-    if(numberOfZones!=zones)
+    if(((int)(*audioProcessor.numberOfZones))!=zones)
     {
-        numberOfZones=zones;
+        *audioProcessor.numberOfZones=zones;
         SetSplitRanges();
     }
     else
