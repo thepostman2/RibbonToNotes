@@ -19,7 +19,8 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="RibbonToNotes"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="RibbonToNotes" macOSDeploymentTarget="13"
+                       osxCompatibility="13 SDK" customXcodeFlags="-Wl,-ld_classic"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="RibbonToNotes"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
