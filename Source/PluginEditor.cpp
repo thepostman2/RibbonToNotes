@@ -95,6 +95,8 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
         sldSplitValuesAttachment[i].reset(new SliderAttachment(valueTreeState, "splits" + std::to_string(i), sldArSplitValues[i]));
         addAndMakeVisible(lblArSplitValues[i]);
     }
+    CreateSlider(sldArSplitExtra);
+    addAndMakeVisible(sldArSplitExtra);
 }
 
 void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
@@ -113,6 +115,12 @@ void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
         sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
         sldArSplitValues[i].setValue(value);
         sldArSplitValues[i].setEnabled(enabled);
+        if(i == (MAX_NOTES/2)-1)
+        {
+            sldArSplitExtra.setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
+            sldArSplitValues[i].setValue(value);
+            sldArSplitValues[i].setEnabled(enabled);
+        }
     }
 }
 
@@ -126,6 +134,11 @@ void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges()
         *audioProcessor.splitValues[i] = value;
         sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
         sldArSplitValues[i].setValue(value);
+        if(i == (MAX_NOTES/2)-1)
+        {
+            sldArSplitExtra.setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
+            sldArSplitValues[i].setValue(value);
+        }
     }
 }
 void RibbonToNotesAudioProcessorEditor::CreateDial(juce::Slider& sld)
@@ -155,6 +168,7 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
         }
         sldArSplitValues[i].addListener(this);
     }
+    sldArSplitExtra.addListener(this);
 }
 
 int RibbonToNotesAudioProcessorEditor::GetNumberOfZones()
@@ -204,6 +218,8 @@ void RibbonToNotesAudioProcessorEditor::resized()
     {
         if(i== MAX_NOTES/2)
         {
+            sldArSplitExtra.setBounds(leftMargin + (i-row*6) * (leftMargin + controlWidth), top3 + row * topOffsetRow2, controlWidth, vsliderHeight);
+            sldArSplitExtra.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
             row++;
         }
         if(i<MAX_NOTES)

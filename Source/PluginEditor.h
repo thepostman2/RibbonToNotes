@@ -78,6 +78,8 @@ private:
     juce::Label lblArNoteNumber[MAX_NOTES];
     juce::Slider sldArSplitValues[MAX_SPLITS];
     juce::Label lblArSplitValues[MAX_SPLITS];
+    juce::Slider sldArSplitExtra; //this is the slider at the end of the first row
+    juce::Label lblArSplitExtra; //this is the label for the slider at the end of the first row
     
     int numberOfZones=6;
     int numberOfSplits(){return numberOfZones-1;}
