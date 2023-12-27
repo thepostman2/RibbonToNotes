@@ -26,7 +26,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
     params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"numberofzones",versionHint1},
                                                            "NumberOfZones",
                                                            0,
-                                                           12,
+                                                           MAX_NOTES,
                                                            6));
 
     params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"velocity",versionHint1},

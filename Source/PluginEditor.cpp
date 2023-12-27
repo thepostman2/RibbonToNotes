@@ -170,13 +170,6 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     sldArSplitExtra.addListener(this);
 }
 
-int RibbonToNotesAudioProcessorEditor::GetNumberOfZones()
-{
-    int zones = sldNumberOfZones.getValue();
-    zones = zones > MAX_NOTES ? MAX_NOTES : zones;
-    zones = zones > sizeof(noteOrder)/sizeof(noteOrder[0]) ? sizeof(noteOrder)/sizeof(noteOrder[0]) : zones;
-    return zones;
-}
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::paint (juce::Graphics& g)
 {
@@ -257,11 +250,11 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
 
 void RibbonToNotesAudioProcessorEditor::SyncSliderValues()
 {
-    auto zones = GetNumberOfZones();
-
-    if(((int)(*audioProcessor.numberOfZones))!=zones)
+    auto zones = sldNumberOfZones.getValue();
+    
+    if(zones != lastNumberOfZones)
     {
-        *audioProcessor.numberOfZones=zones;
+        lastNumberOfZones=zones;
         SetSplitRanges();
     }
     else

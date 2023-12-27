@@ -81,7 +81,7 @@ private:
     juce::Slider sldArSplitExtra; //this is the slider at the end of the first row
     juce::Label lblArSplitExtra; //this is the label for the slider at the end of the first row
     
-    //int numberOfZones=6;
+    int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
     int noteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 
