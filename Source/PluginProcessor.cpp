@@ -14,28 +14,28 @@
 juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout params;
+    int versionHint1 = 1;
 
 
-    int j = MAX_NOTES+1;
-    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"midicc",j++},
+    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"midicc",versionHint1},
                                                             "MidiCC",
                                                             0.0f,
                                                             127.0f,
                                                            22.0f));
 
-    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"numberofzones",j++},
+    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"numberofzones",versionHint1},
                                                            "NumberOfZones",
                                                            0,
                                                            12,
                                                            6));
 
-    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"velocity",j++},
+    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"velocity",versionHint1},
                                                             "Velocity",
                                                             0.0f,
                                                             1.0f,
                                                            90.0/127.0));
 
-    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"octaves",j++},
+    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"octaves",versionHint1},
                                                            "Octaves",
                                                            0,
                                                            8,
@@ -47,7 +47,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
     {
         if(i<MAX_NOTES)
         {
-            params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),i},
+            params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),versionHint1},
                                                                  "Notes",
                                                                  0,
                                                                  MAX_NOTES-1,
@@ -59,7 +59,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
         }
         int defaultsplit = enabled? 1 + i * stepSize:0;
         if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
-        params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"splits" + std::to_string(i),100+i},
+        params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"splits" + std::to_string(i),versionHint1},
                                                              "Splits",
                                                              0,
                                                              128,
