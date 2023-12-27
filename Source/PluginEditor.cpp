@@ -87,7 +87,7 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
             addAndMakeVisible(cmbNotes[i]);
             cmbNotesAttachment[i].reset(new ComboBoxAttachment(valueTreeState, "notes" + std::to_string(i), cmbNotes[i]));
             cmbNotes[i].addItemList(notesArray, 1);
-            cmbNotes[i].setSelectedId(((int)*audioProcessor.noteValues[i]) % 12);
+            cmbNotes[i].setSelectedId((((int)*audioProcessor.noteValues[i]) % 12)+1);
             cmbNotes[i].setEnabled(enabled);
         }
         CreateSlider(sldArSplitValues[i]);
@@ -238,10 +238,11 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
     {
         note = cmbNotes[i].getSelectedId();
         //if the notevalue is lower then the highest note, just add an octave to it.
-        if(note <= maxNote)
+        if(note <= maxNote && (note + 23 + (sldOctave.getValue()+addOctaves+1)*12) < 128)
         {
             addOctaves++;
         }
+        
         *audioProcessor.noteValues[i] = note + 23 + (sldOctave.getValue()+addOctaves)*12;
         maxNote = note;
         if(i<((int)(*audioProcessor.numberOfZones)))

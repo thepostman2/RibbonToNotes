@@ -50,8 +50,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
             params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),versionHint1},
                                                                  "Notes",
                                                                  0,
-                                                                 MAX_NOTES-1,
-                                                                 defaultNoteOrder[i]));
+                                                                 128,
+                                                                 47 + defaultNoteOrder[i]));
         }
         if(i >= DEFAULT_NUMBEROFZONES)
         {
