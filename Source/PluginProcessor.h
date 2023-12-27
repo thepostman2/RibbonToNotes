@@ -64,7 +64,8 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     //==============================================================================
 
-    void SentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time);
+    void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time);
+    void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int time);
 
     std::atomic<float>* midiCC = nullptr;
     std::atomic<float>* numberOfZones = nullptr;
@@ -72,6 +73,8 @@ public:
     std::atomic<float>* octaves = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
     std::atomic<float>* noteValues[MAX_NOTES];
+    std::atomic<float>* chordValues[MAX_NOTES];
+    std::atomic<float>* chordBuilds[MAX_NOTES][MAX_NOTES];
     int notePressedChannel[MAX_NOTES];
 
 private:

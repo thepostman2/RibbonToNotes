@@ -52,6 +52,21 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                  0,
                                                                  128,
                                                                  47 + defaultNoteOrder[i]));
+            params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"chords" + std::to_string(i),versionHint1},
+                                                                 "Chords",
+                                                                 1,
+                                                                 128,
+                                                                 1));
+            int chordBuildDefault = 1;
+            for(int j=0;j<MAX_NOTES;j++)
+            {
+                params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"chordbuilds" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
+                                                                     "Chord Builds",
+                                                                     0,
+                                                                     128,
+                                                                     chordBuildDefault));
+                chordBuildDefault = 0;//default only the base note
+            }
         }
         if(i >= DEFAULT_NUMBEROFZONES)
         {
@@ -89,6 +104,11 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     for(int i=0;i<MAX_NOTES;i++)
     {
         noteValues[i] = parameters.getRawParameterValue("notes" + std::to_string(i));
+        chordValues[i] = parameters.getRawParameterValue("chords" + std::to_string(i));
+        for(int j=0;j<MAX_NOTES;j++)
+        {
+            chordBuilds[i][j] = parameters.getRawParameterValue("chordbuilds" + std::to_string(i) + "_" + std::to_string(j));
+        }
         notePressedChannel[i]=-1;
     }
 
@@ -240,7 +260,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
                 if(ccval < *splitValues[i])
                 {
                     //if ccval is 0, then stop any note from sounding
-                    SentNotesOff(processedMidi,-1,time);
+                    AddPreviousNotesSentNotesOff(processedMidi,-1,time);
                     break;
                 }
                 //if ccval is in range according to spliValues array, start the note
@@ -250,12 +270,13 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
                     if(notePressedChannel[i] != channel)
                     {
                         //first send noteOff for previous note.
-                        SentNotesOff(processedMidi, i, time);
+                        AddPreviousNotesSentNotesOff(processedMidi, i, time);
                         //create new noteOn
+                        notePressedChannel[i] = channel;
+                        AddSentNotesOn(processedMidi,i,time);
                         message = juce::MidiMessage::noteOn(channel,
                                                             *noteValues[i],
                                                             *noteVelocity);
-                        notePressedChannel[i] = channel;
                     }
                     //stop the loop as soon as a range was valid
                     break;
@@ -270,7 +291,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     midiMessages.swapWith(processedMidi);
 }
 
-void RibbonToNotesAudioProcessor::SentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time)
+void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time)
 {
     //loop through array
     for(int i=0;i<MAX_NOTES;i++)
@@ -278,15 +299,32 @@ void RibbonToNotesAudioProcessor::SentNotesOff(juce::MidiBuffer& processedMidi, 
         //if note was pressed, the channel was set.
         if(notePressedChannel[i]>0 && i!=exceptNote)
         {
-            auto message = juce::MidiMessage::noteOff(notePressedChannel[i],*noteValues[i]);
-            processedMidi.addEvent(message, time+10*i);
-            auto message2 = juce::MidiMessage::noteOn(notePressedChannel[i], *noteValues[i], 0.0f);
-            processedMidi.addEvent(message2, time+20*i);
+            for(int j=0;j<MAX_NOTES;j++)
+            {
+                int note = ((int)(*noteValues[i])) + ((int)(*chordBuilds[i][j])) - 1;
+                auto message = juce::MidiMessage::noteOff(notePressedChannel[i],note);
+                processedMidi.addEvent(message, time);
+                auto message2 = juce::MidiMessage::noteOn(notePressedChannel[i], note, 0.0f);
+                processedMidi.addEvent(message2, time);
+            }
             notePressedChannel[i]=-1;
         }
     }
 }
-
+void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int time)
+{
+    //loop through array
+    for(int j=0;j<MAX_NOTES;j++)
+    {
+        if(((int)(*chordBuilds[selectedZone][j]))==0) break;
+        int note = ((int)(*noteValues[selectedZone])) + ((int)(*chordBuilds[selectedZone][j])) - 1;
+        if(note < 128)
+        {
+            auto message = juce::MidiMessage::noteOn(notePressedChannel[selectedZone],note,*noteVelocity);
+            processedMidi.addEvent(message, time);
+        }
+    }
+}
 //==============================================================================
 bool RibbonToNotesAudioProcessor::hasEditor() const
 {

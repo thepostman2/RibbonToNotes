@@ -13,6 +13,10 @@
 
 const char* const notes[] = {"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"};
 const juce::StringArray notesArray((const char**) notes);
+const char* const chords[] = {"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished"};
+const juce::StringArray chordsArray((const char**) chords);
+const char* const chordbuilds[] = {"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7"};
+const juce::StringArray chordbuildsArray((const char**) chordbuilds);
 //==============================================================================
 /**
  */
@@ -45,6 +49,11 @@ private:
     void CreateSlider(juce::Slider& sld);
     void SetSplitRanges();
     void RedistributeSplitRanges();
+    void SetChordBuildFromChord(int i);
+    void GetChordBuild(int i);
+    bool is_validnotenumber(const juce::String& str);
+
+
 
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
@@ -61,6 +70,7 @@ private:
     std::unique_ptr<SliderAttachment> sldVelocityAttachment;
     std::unique_ptr<SliderAttachment> sldOctaveAttachment;
     std::unique_ptr<ComboBoxAttachment> cmbNotesAttachment[MAX_NOTES];
+    std::unique_ptr<ComboBoxAttachment> cmbChordsAttachment[MAX_NOTES];
     std::unique_ptr<SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
 
     
@@ -74,6 +84,8 @@ private:
 
     
     juce::ComboBox cmbNotes[MAX_NOTES];
+    juce::ComboBox cmbChords[MAX_NOTES];
+    juce::Label edtChordBuilder[MAX_NOTES];
     juce::Slider sldArNoteNumber[MAX_NOTES];
     juce::Label lblArNoteNumber[MAX_NOTES];
     juce::Slider sldArSplitValues[MAX_SPLITS];
