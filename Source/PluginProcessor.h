@@ -71,6 +71,7 @@ public:
     std::atomic<float>* numberOfZones = nullptr;
     std::atomic<float>* noteVelocity = nullptr;
     std::atomic<float>* octaves = nullptr;
+    std::atomic<float>* splitExtra = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
     std::atomic<float>* noteValues[MAX_NOTES];
     std::atomic<float>* chordValues[MAX_NOTES];

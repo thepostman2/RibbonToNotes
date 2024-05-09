@@ -80,6 +80,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                              128,
                                                              defaultsplit));
     }
+    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"splitextra",versionHint1},
+                                                         "Split Extra",
+                                                         0,
+                                                         128,
+                                                         128));
     return params;
 }
 //==============================================================================
@@ -101,6 +106,7 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     numberOfZones = parameters.getRawParameterValue("numberofzones");
     noteVelocity = parameters.getRawParameterValue("velocity");
     octaves = parameters.getRawParameterValue("octaves");
+    splitExtra = parameters.getRawParameterValue("splitextra");
     for(int i=0;i<MAX_NOTES;i++)
     {
         noteValues[i] = parameters.getRawParameterValue("notes" + std::to_string(i));

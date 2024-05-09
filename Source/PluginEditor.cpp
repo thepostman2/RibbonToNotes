@@ -18,7 +18,6 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor (RibbonToNo
     // editor's size to whatever you need it to be.
     setSize (700, 500);
     CreateGui();
-    SetSplitRanges();
     SyncSliderValues();
     AddListeners();
 }
@@ -37,6 +36,8 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
         }
         sldSplitValuesAttachment[i] = nullptr;
     }
+    sldSplitExtraValuesAttachment = nullptr;
+    
 }
 
 void RibbonToNotesAudioProcessorEditor::CreateGui()
@@ -122,16 +123,18 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
         addAndMakeVisible(lblArSplitValues[i]);
     }
     CreateSlider(sldArSplitExtra);
-    addAndMakeVisible(sldArSplitExtra);
+    sldSplitExtraValuesAttachment.reset (new SliderAttachment (valueTreeState, "splitextra", sldArSplitExtra));
+    sldArSplitExtra.setValue(*audioProcessor.splitExtra);
+    addAndMakeVisible(lblArSplitExtra);
 }
 
 void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
 {
-    int stepSize = 127/((int)(*audioProcessor.numberOfZones));
+    int stepSize = 127/(sldNumberOfZones.getValue());
     bool enabled = true;
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        enabled = i < ((int)(*audioProcessor.numberOfZones));
+        enabled = i < (sldNumberOfZones.getValue());
         if(i<MAX_NOTES)
         {
             cmbNotes[i].setEnabled(enabled);
@@ -139,15 +142,15 @@ void RibbonToNotesAudioProcessorEditor::SetSplitRanges()
             edtChordBuilder[i].setEnabled(enabled);
         }
         int value = enabled? 1 + i * stepSize:0;
-        if(i>=((int)(*audioProcessor.numberOfZones))) value = 128;
+        if(i>=sldNumberOfZones.getValue()) value = 128;
         sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
         sldArSplitValues[i].setValue(value);
         sldArSplitValues[i].setEnabled(enabled);
-        if(i == (MAX_NOTES/2)-1)
+        if(i == (MAX_NOTES/2))
         {
             sldArSplitExtra.setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
-            sldArSplitValues[i].setValue(value);
-            sldArSplitValues[i].setEnabled(enabled);
+            sldArSplitExtra.setValue(value);
+            sldArSplitExtra.setEnabled(enabled);
         }
     }
 }
@@ -162,10 +165,10 @@ void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges()
         *audioProcessor.splitValues[i] = value;
         sldArSplitValues[i].setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
         sldArSplitValues[i].setValue(value);
-        if(i == (MAX_NOTES/2)-1)
+        if(i == (MAX_NOTES/2))
         {
             sldArSplitExtra.setRange(fmax(value + 1 - stepSize,0), fmin(value - 1 + stepSize,128), 1);
-            sldArSplitValues[i].setValue(value);
+            sldArSplitExtra.setValue(value);
         }
     }
 }
@@ -280,7 +283,13 @@ void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
             *audioProcessor.splitValues[i] = sldArSplitValues[i].getValue();
         }
         else
+        {
             *audioProcessor.splitValues[i] = 128;
+        }
+        if(i == (MAX_NOTES/2))
+        {
+            sldArSplitExtra.setValue(sldArSplitValues[i].getValue());
+        }
     }
 }
 
@@ -311,6 +320,10 @@ void RibbonToNotesAudioProcessorEditor::SyncComboBoxValues()
 
 void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
+    if(slider == &sldArSplitExtra)
+    {
+        sldArSplitValues[MAX_NOTES/2].setValue(sldArSplitExtra.getValue());
+    }
     SyncSliderValues();
 }
 void RibbonToNotesAudioProcessorEditor::comboBoxChanged(juce::ComboBox* combobox)

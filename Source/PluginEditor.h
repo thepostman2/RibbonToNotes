@@ -72,6 +72,7 @@ private:
     std::unique_ptr<ComboBoxAttachment> cmbNotesAttachment[MAX_NOTES];
     std::unique_ptr<ComboBoxAttachment> cmbChordsAttachment[MAX_NOTES];
     std::unique_ptr<SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
+    std::unique_ptr<SliderAttachment> sldSplitExtraValuesAttachment;
 
     
     juce::Label lblMidiCC;
