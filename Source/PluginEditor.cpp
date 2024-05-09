@@ -16,7 +16,7 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor (RibbonToNo
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (600, 400);
+    setSize (700, 500);
     CreateGui();
     SetSplitRanges();
     SyncSliderValues();
@@ -221,12 +221,12 @@ void RibbonToNotesAudioProcessorEditor::resized()
     auto dialHeight = textHeight + controlWidth;
     auto vsliderHeight = 2*textHeight;
 
-    int topGeneralControls =  + textHeight;
+    int topGeneralControls =  topMargin + textHeight;
     int topRowA = topGeneralControls + dialHeight + topMargin;
     int topRowB = topRowA + topMargin + textHeight;
     int topRowC = topRowB + topMargin + textHeight;
     int topRowSplitSliders = topRowC + topMargin + textHeight;
-    int topOffsetRow2 = (topRowSplitSliders-topRowA) + vsliderHeight + textHeight - topMargin;
+    int topOffsetRow2 = (topRowSplitSliders-topRowA) + vsliderHeight + textHeight;// - topMargin;
 
     sldMidiCC.setBounds(leftMargin, topGeneralControls, controlWidth, dialHeight);
     sldMidiCC.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
