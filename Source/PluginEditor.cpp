@@ -102,6 +102,7 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
             addAndMakeVisible(edtChordBuilder[i]);
             edtChordBuilder[i].setEnabled(enabled);
             edtChordBuilder[i].setEditable(true);
+            edtChordBuilder[i].setColour (juce::Label::outlineColourId, juce::Colours::grey);
             juce::String chordBuildStr;
             for(int j=0;j<MAX_NOTES;j++)
             {
@@ -225,11 +226,11 @@ void RibbonToNotesAudioProcessorEditor::resized()
     auto vsliderHeight = 2*textHeight;
 
     int topGeneralControls =  topMargin + textHeight;
-    int topRowA = topGeneralControls + dialHeight + topMargin;
+    int topRowA = topGeneralControls + dialHeight + 2 * topMargin;
     int topRowB = topRowA + topMargin + textHeight;
     int topRowC = topRowB + topMargin + textHeight;
-    int topRowSplitSliders = topRowC + topMargin + textHeight;
-    int topOffsetRow2 = (topRowSplitSliders-topRowA) + vsliderHeight + textHeight;// - topMargin;
+    int topRowSplitSliders = topRowC + textHeight;
+    int topOffsetRow2 = (topRowSplitSliders-topRowA) + vsliderHeight + textHeight + topMargin;
 
     sldMidiCC.setBounds(leftMargin, topGeneralControls, controlWidth, dialHeight);
     sldMidiCC.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
