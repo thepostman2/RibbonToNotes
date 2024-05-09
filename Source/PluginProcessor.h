@@ -63,9 +63,10 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     //==============================================================================
-
-    void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time);
-    void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int time);
+    const int ADDTIME =1;
+    int AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time);
+    int AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time);
+    int AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int time);
 
     std::atomic<float>* midiCC = nullptr;
     std::atomic<float>* numberOfZones = nullptr;

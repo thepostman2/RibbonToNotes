@@ -256,17 +256,18 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     {
         auto message = metadata.getMessage();
         auto time = metadata.samplePosition;
-        
+        int addedTime = 0;
         if(message.isController() && message.getControllerNumber() == (int) *midiCC)
         {
             auto ccval = message.getControllerValue();
             auto channel = message.getChannel();
             for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
             {
-                if(ccval < *splitValues[i])
+                if(ccval <= *splitValues[0])
                 {
                     //if ccval is 0, then stop any note from sounding
-                    AddPreviousNotesSentNotesOff(processedMidi,-1,time);
+                    addedTime += AddSentAllNotesOff(processedMidi,channel, time + addedTime);
+                    //processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), time + addedTime);
                     break;
                 }
                 //if ccval is in range according to spliValues array, start the note
@@ -275,11 +276,11 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
                     //only do something if the same note is not already pressed
                     if(notePressedChannel[i] != channel)
                     {
-                        //first send noteOff for previous note.
-                        AddPreviousNotesSentNotesOff(processedMidi, i, time);
+                        //first sent noteOff for previous notes.
+                        addedTime += AddPreviousNotesSentNotesOff(processedMidi, i, time);
                         //create new noteOn
                         notePressedChannel[i] = channel;
-                        AddSentNotesOn(processedMidi,i,time);
+                        addedTime += AddSentNotesOn(processedMidi,i,time + addedTime);
                         message = juce::MidiMessage::noteOn(channel,
                                                             *noteValues[i],
                                                             *noteVelocity);
@@ -291,14 +292,35 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
             
         }
         //add the noteOn event to the buffer
-        processedMidi.addEvent(message,time);
+        addedTime += ADDTIME;
+        processedMidi.addEvent(message,time + addedTime);
     }
     //swap the original buffer with the new created one
     midiMessages.swapWith(processedMidi);
 }
-
-void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time)
+int RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel, int time)
 {
+    int addedTime = 0;
+    addedTime += ADDTIME;
+    processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), time + addedTime);
+
+    //loop through array
+    for(int i=0;i<MAX_NOTES;i++)
+    {
+        //if note was pressed, the channel was set.
+        if(notePressedChannel[i]>0)
+        {
+            addedTime += ADDTIME;
+            processedMidi.addEvent(juce::MidiMessage::allNotesOff(notePressedChannel[i]), time + addedTime);
+            notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared
+        }
+    }
+    return addedTime;
+}
+
+int RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote, int time)
+{  
+    int addedTime = 0;
     //loop through array
     for(int i=0;i<MAX_NOTES;i++)
     {
@@ -307,18 +329,28 @@ void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer&
         {
             for(int j=0;j<MAX_NOTES;j++)
             {
+                //get j note of the current selected chord
                 int note = ((int)(*noteValues[i])) + ((int)(*chordBuilds[i][j])) - 1;
-                auto message = juce::MidiMessage::noteOff(notePressedChannel[i],note);
-                processedMidi.addEvent(message, time);
+                
+                //create  a noteon message with velocity=0 (for devices that do not respond to note off).
                 auto message2 = juce::MidiMessage::noteOn(notePressedChannel[i], note, 0.0f);
-                processedMidi.addEvent(message2, time);
+                addedTime += ADDTIME;
+                processedMidi.addEvent(message2, time + addedTime);
+
+                //create note off message for this note
+                auto message = juce::MidiMessage::noteOff(notePressedChannel[i],note);
+                addedTime += ADDTIME;
+                processedMidi.addEvent(message, time + addedTime);
+
             }
-            notePressedChannel[i]=-1;
+            notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared
         }
     }
+    return addedTime;
 }
-void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int time)
+int RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int time)
 {
+    int addedTime = 0;
     //loop through array
     for(int j=0;j<MAX_NOTES;j++)
     {
@@ -327,9 +359,11 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
         if(note < 128)
         {
             auto message = juce::MidiMessage::noteOn(notePressedChannel[selectedZone],note,*noteVelocity);
-            processedMidi.addEvent(message, time);
+            addedTime += ADDTIME;
+            processedMidi.addEvent(message, time + addedTime);
         }
     }
+    return addedTime;
 }
 //==============================================================================
 bool RibbonToNotesAudioProcessor::hasEditor() const
