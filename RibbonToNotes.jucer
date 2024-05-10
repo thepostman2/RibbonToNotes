@@ -3,7 +3,7 @@
 <JUCERPROJECT id="RPDDm9" name="RibbonToNotes" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               companyName="PJP" pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginProducesMidiOut,pluginWantsMidiIn"
-              pluginAUMainType="'aumi'" pluginFormats="buildAU">
+              pluginAUMainType="'aumi'" pluginFormats="buildAU,buildVST3">
   <MAINGROUP id="iA8r3J" name="RibbonToNotes">
     <GROUP id="{3266B9C5-B255-1F66-15A8-6F8809D4B69A}" name="Source">
       <FILE id="IbJPvz" name="PluginProcessor.cpp" compile="1" resource="0"
