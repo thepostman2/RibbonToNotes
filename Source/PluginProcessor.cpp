@@ -232,7 +232,7 @@ bool RibbonToNotesAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
 }
 #endif
 
-void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBuffer &midiMessages) 
+void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBuffer &midiMessages)
 {
     for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
     {
@@ -281,13 +281,13 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     //create a new buffer
     juce::MidiBuffer processedMidi;
     
-    int ccval;
-    int channel;
+    int ccval = lastCCValue;
+    int channel =lastChannel;
     //filter the cc mesagges of the selected midiCC
     for(const auto metadata : midiMessages)
     {
         const auto message = metadata.getMessage();
-        auto time = metadata.samplePosition;
+        //auto time = metadata.samplePosition;
         if(message.isController() && message.getControllerNumber() == (int) *midiCC)
         {
             ccval = message.getControllerValue();
@@ -312,14 +312,30 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
 
 bool RibbonToNotesAudioProcessor::HasChanged(int ccval, int channel)
 {
-    int accuracy = 2;
-    return ccval < lastCCValue - accuracy || ccval > lastCCValue + accuracy  || channel != lastChannel;
+    if(channel != lastChannel) return true;
+    for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
+    {
+        if(lastCCValue <= *splitValues[i])
+        {
+            if(i == 0 && ccval <= *splitValues[i])
+            {
+                return false;
+            }
+            if(i > 0 && ccval <= *splitValues[i])
+            {
+                return (ccval > *splitValues[i-1] == false);
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }
+    return true;
 }
 
 void RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel)
 {
-    AddPreviousNotesSentNotesOff(processedMidi, -1);
-    
     processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
     
     //loop through array
