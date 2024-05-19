@@ -6,6 +6,14 @@
               pluginAUMainType="'aumi'" pluginFormats="buildAU,buildVST3">
   <MAINGROUP id="iA8r3J" name="RibbonToNotes">
     <GROUP id="{3266B9C5-B255-1F66-15A8-6F8809D4B69A}" name="Source">
+      <GROUP id="{4A658A51-7557-01E3-4F96-9F8D2CC4DEB3}" name="Service">
+        <FILE id="pJ0NKF" name="PresetManager.cpp" compile="1" resource="0"
+              file="Source/Service/PresetManager.cpp"/>
+        <FILE id="GH7Vxo" name="PresetManager.h" compile="0" resource="0" file="Source/Service/PresetManager.h"/>
+      </GROUP>
+      <GROUP id="{9A127437-252B-99AB-A46A-6947BBCD0E0F}" name="GUI">
+        <FILE id="sB4D4H" name="PresetPanel.h" compile="0" resource="0" file="Source/GUI/PresetPanel.h"/>
+      </GROUP>
       <FILE id="IbJPvz" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Jmehfd" name="PluginProcessor.h" compile="0" resource="0"

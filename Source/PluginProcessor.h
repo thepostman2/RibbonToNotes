@@ -9,7 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-
+#include "Service/PresetManager.h"
 
 #define MAX_NOTES 12
 #define MAX_SPLITS MAX_NOTES+1
@@ -83,8 +83,11 @@ public:
     std::atomic<float>* chordBuilds[MAX_NOTES][MAX_NOTES];
     int notePressedChannel[MAX_NOTES];
     
+    Service::PresetManager& getPresetManager(){ return *presetManager; }
+    
 private:
-    juce::AudioProcessorValueTreeState parameters;
+    juce::AudioProcessorValueTreeState valueTreeState;
+    std::unique_ptr<Service::PresetManager> presetManager;
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessor)

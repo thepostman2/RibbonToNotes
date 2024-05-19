@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "GUI/PresetPanel.h"
 
 const char* const notes[] = {"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"};
 const juce::StringArray notesArray((const char**) notes);
@@ -53,8 +54,6 @@ private:
     void GetChordBuild(int i);
     bool is_validnotenumber(const juce::String& str);
 
-
-
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
     
@@ -63,6 +62,8 @@ private:
     // access the processor object that created it.
     RibbonToNotesAudioProcessor& audioProcessor;
     juce::AudioProcessorValueTreeState& valueTreeState;
+    
+    GUI::PresetPanel presetPanel;
 
     juce::Slider sldMidiCC;
     std::unique_ptr<SliderAttachment> sldMidiCCAttachment;

@@ -11,8 +11,11 @@
 #include <cmath>
 
 //==============================================================================
-RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor (RibbonToNotesAudioProcessor& p,juce::AudioProcessorValueTreeState& vts)
-    : AudioProcessorEditor (&p), audioProcessor (p), valueTreeState(vts)
+RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToNotesAudioProcessor& p
+    , juce::AudioProcessorValueTreeState& vts)
+    : AudioProcessorEditor (&p)
+    , audioProcessor (p), valueTreeState(vts)
+    , presetPanel(p.getPresetManager())
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -42,6 +45,8 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
 
 void RibbonToNotesAudioProcessorEditor::CreateGui()
 {
+    addAndMakeVisible(presetPanel);
+    
     CreateDial(sldMidiCC);
     sldMidiCCAttachment.reset (new SliderAttachment (valueTreeState, "midicc", sldMidiCC));
     sldMidiCC.setRange(1, 127,1);
@@ -218,19 +223,25 @@ void RibbonToNotesAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
+    
+    
     auto leftMargin = getWidth() * 0.02;
     auto topMargin = getHeight() * 0.02;
     auto controlWidth = (getWidth() / (0.5 * MAX_NOTES + 0.5)) - 2 * leftMargin;
-    int textHeight = 22;
+    int textHeight = (getHeight() - controlWidth - 4 * topMargin) * 0.05f;
     auto dialHeight = textHeight + controlWidth;
     auto vsliderHeight = 2*textHeight;
 
-    int topGeneralControls =  topMargin + textHeight;
+    int topPresetMenu =  getHeight() * 0.1f;
+    int topGeneralControls = topPresetMenu + topMargin + textHeight;
     int topRowA = topGeneralControls + dialHeight + 2 * topMargin;
     int topRowB = topRowA + topMargin + textHeight;
     int topRowC = topRowB + topMargin + textHeight;
     int topRowSplitSliders = topRowC + textHeight;
     int topOffsetRow2 = (topRowSplitSliders-topRowA) + vsliderHeight + textHeight + topMargin;
+
+    presetPanel.setBounds(getLocalBounds().removeFromTop(proportionOfHeight(0.1f)));
+
 
     sldMidiCC.setBounds(leftMargin, topGeneralControls, controlWidth, dialHeight);
     sldMidiCC.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);

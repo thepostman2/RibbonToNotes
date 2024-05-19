@@ -99,21 +99,24 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
                   ), StartTime (juce::Time::getMillisecondCounterHiRes() * 0.001)
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-, parameters(*this, nullptr, juce::Identifier("RibbonToNotes"), CreateParameterLayout())
+, valueTreeState(*this, nullptr, juce::Identifier("RibbonToNotes"), CreateParameterLayout())
 #endif
 {
-    midiCC = parameters.getRawParameterValue("midicc");
-    numberOfZones = parameters.getRawParameterValue("numberofzones");
-    noteVelocity = parameters.getRawParameterValue("velocity");
-    octaves = parameters.getRawParameterValue("octaves");
-    splitExtra = parameters.getRawParameterValue("splitextra");
+    valueTreeState.state.setProperty(Service::PresetManager::presetNameProperty, "", nullptr);
+    valueTreeState.state.setProperty("version", ProjectInfo::versionString, nullptr);
+    
+    midiCC = valueTreeState.getRawParameterValue("midicc");
+    numberOfZones = valueTreeState.getRawParameterValue("numberofzones");
+    noteVelocity = valueTreeState.getRawParameterValue("velocity");
+    octaves = valueTreeState.getRawParameterValue("octaves");
+    splitExtra = valueTreeState.getRawParameterValue("splitextra");
     for(int i=0;i<MAX_NOTES;i++)
     {
-        noteValues[i] = parameters.getRawParameterValue("notes" + std::to_string(i));
-        chordValues[i] = parameters.getRawParameterValue("chords" + std::to_string(i));
+        noteValues[i] = valueTreeState.getRawParameterValue("notes" + std::to_string(i));
+        chordValues[i] = valueTreeState.getRawParameterValue("chords" + std::to_string(i));
         for(int j=0;j<MAX_NOTES;j++)
         {
-            chordBuilds[i][j] = parameters.getRawParameterValue("chordbuilds" + std::to_string(i) + "_" + std::to_string(j));
+            chordBuilds[i][j] = valueTreeState.getRawParameterValue("chordbuilds" + std::to_string(i) + "_" + std::to_string(j));
         }
         notePressedChannel[i]=-1;
     }
@@ -121,9 +124,11 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     //int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        splitValues[i] = parameters.getRawParameterValue("splits" + std::to_string(i));
+        splitValues[i] = valueTreeState.getRawParameterValue("splits" + std::to_string(i));
     }
     *splitValues[0]=0;
+    
+    presetManager = std::make_unique<Service::PresetManager>(valueTreeState);
 }
 
 //==============================================================================
@@ -402,7 +407,7 @@ bool RibbonToNotesAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* RibbonToNotesAudioProcessor::createEditor()
 {
-    return new RibbonToNotesAudioProcessorEditor (*this, parameters);
+    return new RibbonToNotesAudioProcessorEditor (*this, valueTreeState);
 }
 
 //==============================================================================
@@ -411,7 +416,7 @@ void RibbonToNotesAudioProcessor::getStateInformation (juce::MemoryBlock& destDa
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
-    auto state = parameters.copyState();
+    auto state = valueTreeState.copyState();
     std::unique_ptr<juce::XmlElement> xml (state.createXml());
     copyXmlToBinary (*xml, destData);
 }
@@ -423,8 +428,8 @@ void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int siz
     std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
     
     if (xmlState.get() != nullptr)
-        if (xmlState->hasTagName (parameters.state.getType()))
-            parameters.replaceState (juce::ValueTree::fromXml (*xmlState));
+        if (xmlState->hasTagName (valueTreeState.state.getType()))
+            valueTreeState.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 //==============================================================================
