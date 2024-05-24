@@ -23,6 +23,7 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
     CreateGui();
     SyncSliderValues();
     AddListeners();
+    startTimerHz(24);
 }
 
 RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
@@ -79,6 +80,11 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblOctave.attachToComponent(&sldOctave, false);
     lblOctave.setJustificationType(juce::Justification::centred);
     
+    //put the rectangles underneath the controls, by adding them first.
+    for(int i=0;i<MAX_SPLITS+1;i++)
+    {
+        addAndMakeVisible(ribbonZoneVisuals[i]);
+    }
 
     for(int i=0;i<MAX_SPLITS;i++)
     {
@@ -253,6 +259,8 @@ void RibbonToNotesAudioProcessorEditor::resized()
     sldOctave.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
 
     int row = 0;
+    ribbonZoneVisuals[0].setBounds(leftMargin, topRowA - topMargin + row * topOffsetRow2, 5*textHeight, 0.5*(controlWidth-leftMargin));
+
     for(int i=0;i<MAX_SPLITS;i++)
     {
         if(i== MAX_NOTES/2)
@@ -263,6 +271,8 @@ void RibbonToNotesAudioProcessorEditor::resized()
         }
         if(i<MAX_NOTES)
         {
+            ribbonZoneVisuals[i+1].setBounds(0.5 * leftMargin + 0.5 * controlWidth + (i-row*6) * (leftMargin + controlWidth), topRowA - topMargin + row * topOffsetRow2, 5*textHeight, controlWidth + leftMargin);
+
             cmbNotes[i].setBounds(leftMargin + 0.5 * controlWidth + (i-row*6) * (leftMargin + controlWidth), topRowA + row * topOffsetRow2, controlWidth, textHeight);
 
             cmbChords[i].setBounds(leftMargin + 0.5 * controlWidth + (i-row*6) * (leftMargin + controlWidth), topRowB + row * topOffsetRow2, controlWidth, textHeight);
@@ -272,6 +282,8 @@ void RibbonToNotesAudioProcessorEditor::resized()
         sldArSplitValues[i].setBounds(leftMargin + (i-row*6) * (leftMargin + controlWidth), topRowSplitSliders + row * topOffsetRow2, controlWidth, vsliderHeight);
         sldArSplitValues[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
     }
+
+
 }
 void RibbonToNotesAudioProcessorEditor::SyncNotesAndSplits()
 {
@@ -379,3 +391,16 @@ bool RibbonToNotesAudioProcessorEditor::is_validnotenumber(const juce::String& s
     return isvalid;
 }
 
+void RibbonToNotesAudioProcessorEditor::ShowRibbonZone(int area)
+{
+    for(int i=0;i<MAX_SPLITS;i++)
+    {
+        ribbonZoneVisuals[i].FillColourOn = i == area;
+        ribbonZoneVisuals[i].repaint();
+    }
+}
+
+void RibbonToNotesAudioProcessorEditor::timerCallback()
+{
+    ShowRibbonZone(audioProcessor.getActiveZone());
+}

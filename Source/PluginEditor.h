@@ -19,11 +19,37 @@ const juce::StringArray chordsArray((const char**) chords);
 const char* const chordbuilds[] = {"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7"};
 const juce::StringArray chordbuildsArray((const char**) chordbuilds);
 //==============================================================================
+struct RibbonZoneVisual : public juce::Component
+{
+    RibbonZoneVisual(){setPaintingIsUnclipped(true);}
+    
+    void paint (juce::Graphics& g) override
+    {
+        juce::Rectangle<int> outline(getHeight(),getWidth());
+        g.setColour(juce::Colours::whitesmoke);
+        g.drawRect(outline);
+        if(FillColourOn)
+        {
+            g.setColour(juce::Colours::red);
+            g.fillRect(outline);
+        }
+        else
+        {
+            g.setColour(juce::Colours::black);
+            g.fillRect(outline);
+        }
+    }
+    
+    bool FillColourOn;
+};
+//==============================================================================
+
 /**
  */
 class RibbonToNotesAudioProcessorEditor  : public juce::AudioProcessorEditor,
 private juce::Slider::Listener,
-private juce::ComboBox::Listener
+private juce::ComboBox::Listener,
+private juce::Timer
 {
 public:
     typedef juce::AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
@@ -33,8 +59,10 @@ public:
     ~RibbonToNotesAudioProcessorEditor() override;
     
     //==============================================================================
+    void timerCallback() override;
     void paint (juce::Graphics&) override;
     void resized() override;
+    void ShowRibbonZone(int area);
     
     
 private:
@@ -94,10 +122,12 @@ private:
     juce::Label lblArSplitValues[MAX_SPLITS];
     juce::Slider sldArSplitExtra; //this is the slider at the end of the first row
     juce::Label lblArSplitExtra; //this is the label for the slider at the end of the first row
+    RibbonZoneVisual ribbonZoneVisuals[MAX_SPLITS+1];
     
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
     int noteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
+    
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessorEditor)
 };

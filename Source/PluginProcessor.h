@@ -82,13 +82,15 @@ public:
     std::atomic<float>* chordValues[MAX_NOTES];
     std::atomic<float>* chordBuilds[MAX_NOTES][MAX_NOTES];
     int notePressedChannel[MAX_NOTES];
+    int getActiveZone() const;
     
     Service::PresetManager& getPresetManager(){ return *presetManager; }
     
 private:
     juce::AudioProcessorValueTreeState valueTreeState;
     std::unique_ptr<Service::PresetManager> presetManager;
-    
+    int activeZone = 0;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessor)
 };

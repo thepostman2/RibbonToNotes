@@ -246,6 +246,7 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
             //if ccval is 0, then stop any note from sounding
             AddSentAllNotesOff(midiMessages,lastChannel);
             //processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
+            activeZone = 0;
             break;
         }
         //if ccval is in range according to spliValues array, start the note
@@ -254,6 +255,7 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
             //only do something if the same note is not already pressed
             if(notePressedChannel[i] != channel)
             {
+                activeZone = i+1;
                 //first sent noteOff for previous notes.
                 AddPreviousNotesSentNotesOff(midiMessages, i);
                 //create new noteOn
@@ -430,6 +432,11 @@ void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int siz
     if (xmlState.get() != nullptr)
         if (xmlState->hasTagName (valueTreeState.state.getType()))
             valueTreeState.replaceState (juce::ValueTree::fromXml (*xmlState));
+}
+
+int RibbonToNotesAudioProcessor::getActiveZone() const
+{
+    return activeZone;
 }
 
 //==============================================================================
