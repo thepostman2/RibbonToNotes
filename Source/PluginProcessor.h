@@ -69,7 +69,8 @@ public:
     void PlayNotes(int ccval, int channel, juce::MidiBuffer &midiMessages);
     bool HasChanged(int ccval, int channel);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
-    void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
+    void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
+    void AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
     void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone);
     
     std::atomic<float>* midiCC = nullptr;
@@ -81,6 +82,7 @@ public:
     std::atomic<float>* noteValues[MAX_NOTES];
     std::atomic<float>* chordValues[MAX_NOTES];
     std::atomic<float>* chordBuilds[MAX_NOTES][MAX_NOTES];
+    juce::Array<int> notesPressed;
     int notePressedChannel[MAX_NOTES];
     int getActiveZone() const;
     
