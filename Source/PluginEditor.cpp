@@ -357,7 +357,7 @@ void RibbonToNotesAudioProcessorEditor::comboBoxChanged(juce::ComboBox* combobox
 
 void RibbonToNotesAudioProcessorEditor::SetChordBuildFromChord(int i)
 {
-    edtChordBuilder[i].setText(chordbuilds[cmbChords[i].getSelectedId()], juce::sendNotification);
+    edtChordBuilder[i].setText(chordbuildsArray[cmbChords[i].getSelectedId()], juce::sendNotification);
 }
 void RibbonToNotesAudioProcessorEditor::GetChordBuild(int i)
 {
