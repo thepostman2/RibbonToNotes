@@ -13,58 +13,66 @@
 //==============================================================================
 juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
 {
-    juce::AudioProcessorValueTreeState::ParameterLayout params;
+    //juce::AudioProcessorValueTreeState::ParameterLayout params;
+    
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     int versionHint1 = 1;
     
     
-    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"midicc",versionHint1},
-                                                           "MidiCC",
-                                                           0.0f,
-                                                           127.0f,
-                                                           22.0f));
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDICC_ID,versionHint1},
+                                                               MIDICC_NAME,
+                                                               0,
+                                                               127,
+                                                               22));
     
-    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"numberofzones",versionHint1},
-                                                         "NumberOfZones",
-                                                         0,
-                                                         MAX_NOTES,
-                                                         6));
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{NUMBEROFZONES_ID,versionHint1},
+                                                               NUMBEROFZONES_NAME,
+                                                               0,
+                                                               MAX_ZONES,
+                                                               6));
     
-    params.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"velocity",versionHint1},
-                                                           "Velocity",
-                                                           0.0f,
-                                                           1.0f,
-                                                           90.0/127.0));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{VELOCITY_ID,versionHint1},
+                                                                 VELOCITY_NAME,
+                                                                 0.0f,
+                                                                 1.0f,
+                                                                 90.0/127.0));
     
-    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"octaves",versionHint1},
-                                                         "Octaves",
-                                                         0,
-                                                         8,
-                                                         2));
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{OCTAVES_ID,versionHint1},
+                                                               OCTAVES_NAME,
+                                                               0,
+                                                               8,
+                                                               2));
+    
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{PITCHMODES_ID,versionHint1},
+                                                               PITCHMODES_NAME,
+                                                               1,
+                                                               2,
+                                                               1));
     int stepSize = 127/DEFAULT_NUMBEROFZONES;
     bool enabled = true;
     
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        if(i<MAX_NOTES)
+        if(i<MAX_ZONES)
         {
-            params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"notes" + std::to_string(i),versionHint1},
-                                                                 "Notes",
-                                                                 0,
-                                                                 128,
-                                                                 47 + defaultNoteOrder[i]));
-            params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"chords" + std::to_string(i),versionHint1},
-                                                                 "Chords",
-                                                                 1,
-                                                                 128,
-                                                                 1));
+            params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{KEYS_ID + std::to_string(i),versionHint1},
+                                                                       KEYS_NAME,
+                                                                       1,
+                                                                       12,
+                                                                       defaultNoteOrder[i]));
+            params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDS_ID + std::to_string(i),versionHint1},
+                                                                       CHORDS_NAME,
+                                                                       1,
+                                                                       chordsArray.size(),
+                                                                       1));
             int chordBuildDefault = 1;
             for(int j=0;j<MAX_NOTES;j++)
             {
-                params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"chordbuilds" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
-                                                                     "Chord Builds",
-                                                                     0,
-                                                                     128,
-                                                                     chordBuildDefault));
+                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID+ std::to_string(i) + "_" + std::to_string(j),versionHint1},
+                                                                           CHORDBUILDS_NAME,
+                                                                           0,
+                                                                           128,
+                                                                           chordBuildDefault));
                 chordBuildDefault = 0;//default only the base note
             }
         }
@@ -74,18 +82,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
         }
         int defaultsplit = enabled? 1 + i * stepSize:0;
         if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
-        params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"splits" + std::to_string(i),versionHint1},
-                                                             "Splits",
-                                                             0,
-                                                             128,
-                                                             defaultsplit));
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITS_ID + std::to_string(i),versionHint1},
+                                                                   SPLITS_NAME,
+                                                                   0,
+                                                                   128,
+                                                                   defaultsplit));
     }
-    params.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"splitextra",versionHint1},
-                                                         "Split Extra",
-                                                         0,
-                                                         128,
-                                                         128));
-    return params;
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITEXTRA_ID,versionHint1},
+                                                               SPLITEXTRA_NAME,
+                                                               0,
+                                                               128,
+                                                               128));
+    return {params.begin(), params.end()};
 }
 //==============================================================================
 RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
@@ -99,24 +107,25 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
                   ), StartTime (juce::Time::getMillisecondCounterHiRes() * 0.001)
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-, valueTreeState(*this, nullptr, juce::Identifier("RibbonToNotes"), CreateParameterLayout())
+, apvts(*this, nullptr, juce::Identifier("RibbonToNotes"), CreateParameterLayout())
 #endif
 {
-    valueTreeState.state.setProperty(Service::PresetManager::presetNameProperty, "", nullptr);
-    valueTreeState.state.setProperty("version", ProjectInfo::versionString, nullptr);
+    apvts.state.setProperty(Service::PresetManager::presetNameProperty, "", nullptr);
+    apvts.state.setProperty("version", ProjectInfo::versionString, nullptr);
     
-    midiCC = valueTreeState.getRawParameterValue("midicc");
-    numberOfZones = valueTreeState.getRawParameterValue("numberofzones");
-    noteVelocity = valueTreeState.getRawParameterValue("velocity");
-    octaves = valueTreeState.getRawParameterValue("octaves");
-    splitExtra = valueTreeState.getRawParameterValue("splitextra");
-    for(int i=0;i<MAX_NOTES;i++)
+    midiCC = apvts.getRawParameterValue(MIDICC_ID);
+    numberOfZones = apvts.getRawParameterValue(NUMBEROFZONES_ID);
+    noteVelocity = apvts.getRawParameterValue(VELOCITY_ID);
+    octaves = apvts.getRawParameterValue(OCTAVES_ID);
+    pitchMode = apvts.getRawParameterValue(PITCHMODES_ID);
+    splitExtra = apvts.getRawParameterValue(SPLITEXTRA_ID);
+    for(int i=0;i<MAX_ZONES;i++)
     {
-        noteValues[i] = valueTreeState.getRawParameterValue("notes" + std::to_string(i));
-        chordValues[i] = valueTreeState.getRawParameterValue("chords" + std::to_string(i));
+        selectedKeys[i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(i));
+        chordValues[i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(i));
         for(int j=0;j<MAX_NOTES;j++)
         {
-            chordBuilds[i][j] = valueTreeState.getRawParameterValue("chordbuilds" + std::to_string(i) + "_" + std::to_string(j));
+            chordNotes[i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(i) + "_" + std::to_string(j));
         }
         notePressedChannel[i]=-1;
     }
@@ -124,11 +133,13 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     //int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
     for(int i=0;i<MAX_SPLITS;i++)
     {
-        splitValues[i] = valueTreeState.getRawParameterValue("splits" + std::to_string(i));
+        splitValues[i] = apvts.getRawParameterValue(SPLITS_ID + std::to_string(i));
     }
     *splitValues[0]=0;
     
-    presetManager = std::make_unique<Service::PresetManager>(valueTreeState);
+    BuildChords();
+    
+    presetManager = std::make_unique<Service::PresetManager>(apvts);
 }
 
 //==============================================================================
@@ -243,10 +254,11 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
     {
         if(ccval <= *splitValues[0])
         {
-            //if ccval is 0, then stop any note from sounding
-            //AddSentAllNotesOff(midiMessages,lastChannel);
-            AddPreviousNotesSentNotesOff(midiMessages, lastChannel);
-            //processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
+            if(channel != lastChannel)
+            {
+                AddSentAllNotesOff(midiMessages,lastChannel);
+            }
+            AddPreviousNotesSentNotesOff(midiMessages, channel);
             activeZone = 0;
             break;
         }
@@ -258,10 +270,10 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
             {
                 activeZone = i+1;
                 //first sent noteOff for previous notes.
-                AddPreviousChannelNotesSentNotesOff(midiMessages, i);
+                AddPreviousNotesSentNotesOff(midiMessages, channel);
                 //create new noteOn
                 notePressedChannel[i] = channel;
-                AddSentNotesOn(midiMessages,i);
+                AddSentNotesOn(midiMessages,i, channel);
             }
             //stop the loop as soon as a range was valid
             break;
@@ -272,7 +284,7 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
 void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     // A pure MIDI plugin shouldn't be provided any audio data
-    jassert (buffer.getNumChannels() == 0);
+    //jassert (buffer.getNumChannels() == 0);
     
     // however we use the buffer to get timing information
     //auto numSamples = buffer.getNumSamples();
@@ -290,7 +302,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     juce::MidiBuffer processedMidi;
     
     int ccval = lastCCValue;
-    int channel =lastChannel;
+    int channel = lastChannel;
     //filter the cc mesagges of the selected midiCC
     for(const auto metadata : midiMessages)
     {
@@ -342,12 +354,76 @@ bool RibbonToNotesAudioProcessor::HasChanged(int ccval, int channel)
     return true;
 }
 
+
+void RibbonToNotesAudioProcessor::BuildChords()
+{
+    int maxNote = 0;
+    int key = 0;
+    int octave = (int) *octaves;
+    int addOctaves=1;
+    
+    for(int i=0 ; i < MAX_ZONES; i++)
+    {
+        key = (int) *selectedKeys[i];
+        
+        //pitchMode = up
+        if(*pitchMode == 1)
+        {
+            //if the notevalue is lower then the highest note, just add an octave to it.
+            if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
+            {
+                addOctaves++;
+            }
+            maxNote = key;
+        }
+        //pitchmode = centred
+        else if(*pitchMode == 2)
+        {
+            if(i > 0)
+            {
+                //pitchmode is centred around maxnote
+                auto dist = key - maxNote;
+                if(dist > 4)
+                {
+                    key = key - 12;
+                }
+                else if(dist < -7)
+                {
+                    key = key + 12;
+                }
+            }
+            else
+            {
+                //first note is centre in case of pitchmode centred
+                maxNote = key;
+            }
+        }
+        BuildChord(octave + addOctaves, i, key);
+    }
+}
+
+void RibbonToNotesAudioProcessor::BuildChord(int addOctaves, int zone, int key)
+{
+    for(int j=0;j<MAX_NOTES;j++)
+    {
+        int note = (int) *chordNotes[zone][j];
+        if(note == 0)
+        {
+            chordBuilds[zone][j] = note;
+        }
+        else
+        {
+            chordBuilds[zone][j]= (key + 11 + note + addOctaves * 12)-1;
+        }
+    }
+}
+
 void RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel)
 {
     processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
     
     //loop through array
-    for(int i=0;i<MAX_NOTES;i++)
+    for(int i=0;i<MAX_ZONES;i++)
     {
         //if note was pressed, the channel was set.
         if(notePressedChannel[i]>0)
@@ -363,26 +439,28 @@ void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer&
     //loop through array
     for(int i = 0; i < notesPressed.size(); i++)
     {
-        auto message1 = juce::MidiMessage::noteOn(channel, notesPressed[i], 0.0f);
+        auto note =notesPressed[i];
+        
+        auto message1 = juce::MidiMessage::noteOn(channel, note, 0.0f);
         processedMidi.addEvent(message1, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
         
-        auto message2 = juce::MidiMessage::noteOff(channel,notesPressed[i]);
+        auto message2 = juce::MidiMessage::noteOff(channel,note);
         processedMidi.addEvent(message2, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
     }
     notesPressed.removeRange(0,notesPressed.size());
 }
 
-void RibbonToNotesAudioProcessor::AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote)
+void RibbonToNotesAudioProcessor::AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptZone)
 {
-    for(int i=0;i<MAX_NOTES;i++)
+    for(int i=0;i<MAX_ZONES;i++)
     {
         //if note was pressed, the channel was set.
-        if(notePressedChannel[i]>0 && i!=exceptNote)
+        if(notePressedChannel[i]>0 && i!=exceptZone)
         {
             for(int j=0;j<MAX_NOTES;j++)
             {
                 //get j note of the current selected chord
-                int note = ((int)(*noteValues[i])) + ((int)(*chordBuilds[i][j])) - 1;
+                int note = ((int)(*selectedKeys[i])) + ((int)(*chordNotes[i][j])) - 1;
                 if(note < 1){note += 12;}
                 //create  a noteon message with velocity=0 (for devices that do not respond to note off).
                 if(note < 128)
@@ -394,28 +472,24 @@ void RibbonToNotesAudioProcessor::AddPreviousChannelNotesSentNotesOff(juce::Midi
                     auto message2 = juce::MidiMessage::noteOff(notePressedChannel[i],note);
                     processedMidi.addEvent(message2, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
                 }
-                
             }
             notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared
         }
     }
 }
-void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone)
+void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel)
 {
     //loop through array
     for(int j=0;j<MAX_NOTES;j++)
     {
-        if(((int)(*chordBuilds[selectedZone][j]))==0) break;
-        int note = ((int)(*noteValues[selectedZone])) + ((int)(*chordBuilds[selectedZone][j])) - 1;
-        if(note < 1){note += 12;}
-        if(note < 128)
-        {
-            auto message = juce::MidiMessage::noteOn(notePressedChannel[selectedZone],note,*noteVelocity);
-            processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-            notesPressed.add(note);
-        }
+        int note = chordBuilds[selectedZone][j];
+        if(((int)(*chordNotes[selectedZone][j]))==0) break;
+        auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
+        processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
+        notesPressed.add(note);
     }
 }
+
 //==============================================================================
 bool RibbonToNotesAudioProcessor::hasEditor() const
 {
@@ -424,7 +498,7 @@ bool RibbonToNotesAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* RibbonToNotesAudioProcessor::createEditor()
 {
-    return new RibbonToNotesAudioProcessorEditor (*this, valueTreeState);
+    return new RibbonToNotesAudioProcessorEditor (*this);
 }
 
 //==============================================================================
@@ -433,7 +507,7 @@ void RibbonToNotesAudioProcessor::getStateInformation (juce::MemoryBlock& destDa
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
-    auto state = valueTreeState.copyState();
+    auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml (state.createXml());
     copyXmlToBinary (*xml, destData);
 }
@@ -445,8 +519,8 @@ void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int siz
     std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
     
     if (xmlState.get() != nullptr)
-        if (xmlState->hasTagName (valueTreeState.state.getType()))
-            valueTreeState.replaceState (juce::ValueTree::fromXml (*xmlState));
+        if (xmlState->hasTagName (apvts.state.getType()))
+            apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 int RibbonToNotesAudioProcessor::getActiveZone() const

@@ -12,10 +12,36 @@
 #include "Service/PresetManager.h"
 
 #define MAX_NOTES 12
-#define MAX_SPLITS MAX_NOTES+1
+#define MAX_ZONES 12
+#define MAX_SPLITS MAX_ZONES+1
 #define DEFAULT_NUMBEROFZONES 6
 
+#define MIDICC_ID "midicc"
+#define MIDICC_NAME "midicc"
+#define NUMBEROFZONES_ID "numberofzones"
+#define NUMBEROFZONES_NAME "NumberOfZones"
+#define VELOCITY_ID "velocity"
+#define VELOCITY_NAME "Velocity"
+#define OCTAVES_ID "octaves"
+#define OCTAVES_NAME "Octaves"
+#define PITCHMODES_ID "pitchmodes"
+#define PITCHMODES_NAME "PitchModes"
+#define KEYS_ID "keys"
+#define KEYS_NAME "Keys"
+#define CHORDS_ID "chords"
+#define CHORDS_NAME "Chords"
+#define CHORDBUILDS_ID "chordbuilds"
+#define CHORDBUILDS_NAME "ChordBuilds"
+#define SPLITS_ID "splits"
+#define SPLITS_NAME "Splits"
+#define SPLITEXTRA_ID "splitextra"
+#define SPLITEXTRA_NAME "SplitExtra"
+
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
+const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
+const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished"});
+const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7"});
+const juce::StringArray pitchModesArray({"Up" , "Centre"});
 
 //==============================================================================
 /**
@@ -70,26 +96,35 @@ public:
     bool HasChanged(int ccval, int channel);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
     void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
-    void AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
-    void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone);
-    
+    void AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
+    void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel);
+    int GetNote(int basenote, int addNote, int numberOfOctaves);
+    void BuildChords();
+    void BuildChord(int addOctaves, int i, int note);
+
     std::atomic<float>* midiCC = nullptr;
     std::atomic<float>* numberOfZones = nullptr;
     std::atomic<float>* noteVelocity = nullptr;
     std::atomic<float>* octaves = nullptr;
+    std::atomic<float>* pitchMode = nullptr;
     std::atomic<float>* splitExtra = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
-    std::atomic<float>* noteValues[MAX_NOTES];
-    std::atomic<float>* chordValues[MAX_NOTES];
-    std::atomic<float>* chordBuilds[MAX_NOTES][MAX_NOTES];
+    std::atomic<float>* selectedKeys[MAX_ZONES];
+    std::atomic<float>* chordValues[MAX_ZONES];
+    std::atomic<float>* chordNotes[MAX_ZONES][MAX_NOTES];
+
+    int chordBuilds[MAX_ZONES][MAX_NOTES];
+
     juce::Array<int> notesPressed;
-    int notePressedChannel[MAX_NOTES];
+    int notePressedChannel[MAX_ZONES];
     int getActiveZone() const;
     
     Service::PresetManager& getPresetManager(){ return *presetManager; }
+
+    juce::AudioProcessorValueTreeState apvts;
+
     
 private:
-    juce::AudioProcessorValueTreeState valueTreeState;
     std::unique_ptr<Service::PresetManager> presetManager;
     int activeZone = 0;
 

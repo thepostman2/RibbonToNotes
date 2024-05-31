@@ -12,10 +12,6 @@
 #include "PluginProcessor.h"
 #include "GUI/PresetPanel.h"
 
-const juce::StringArray notesArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
-const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished"});
-const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7"});
-const juce::StringArray pitchModesArray({"Up" , "Centre"});
 //==============================================================================
 struct RibbonZoneVisual : public juce::Component
 {
@@ -53,7 +49,7 @@ public:
     typedef juce::AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
     typedef juce::AudioProcessorValueTreeState::ComboBoxAttachment ComboBoxAttachment;
 
-    RibbonToNotesAudioProcessorEditor (RibbonToNotesAudioProcessor&, juce::AudioProcessorValueTreeState&);
+    RibbonToNotesAudioProcessorEditor (RibbonToNotesAudioProcessor&);
     ~RibbonToNotesAudioProcessorEditor() override;
     
     //==============================================================================
@@ -71,7 +67,9 @@ private:
     
     void SyncSliderValues();
     void SyncComboBoxValues();
-    void SyncNotesAndSplits();
+    void extracted(int addOctaves, int i, int note);
+    
+void SyncNotesAndSplits();
     void CreateDial(juce::Slider& sld);
     void CreateSlider(juce::Slider& sld);
     void SetSplitRanges();
@@ -83,24 +81,13 @@ private:
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
     
-    
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     RibbonToNotesAudioProcessor& audioProcessor;
-    juce::AudioProcessorValueTreeState& valueTreeState;
     
     GUI::PresetPanel presetPanel;
 
     juce::Slider sldMidiCC;
-    std::unique_ptr<SliderAttachment> sldMidiCCAttachment;
-    std::unique_ptr<SliderAttachment> sldNumberOfZonesAttachment;
-    std::unique_ptr<SliderAttachment> sldVelocityAttachment;
-    std::unique_ptr<SliderAttachment> sldOctaveAttachment;
-    std::unique_ptr<ComboBoxAttachment> cmbNotesAttachment[MAX_NOTES];
-    std::unique_ptr<ComboBoxAttachment> cmbChordsAttachment[MAX_NOTES];
-    std::unique_ptr<SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
-    std::unique_ptr<SliderAttachment> sldSplitExtraValuesAttachment;
-
     
     juce::Label lblMidiCC;
     juce::Slider sldNumberOfZones;
@@ -109,13 +96,14 @@ private:
     juce::Label lblVelocity;
     juce::Slider sldOctave;
     juce::Label lblOctave;
+    juce::ComboBox cmbPitchModes;
 
     
-    juce::ComboBox cmbNotes[MAX_NOTES];
-    juce::ComboBox cmbChords[MAX_NOTES];
-    juce::Label edtChordBuilder[MAX_NOTES];
-    juce::Slider sldArNoteNumber[MAX_NOTES];
-    juce::Label lblArNoteNumber[MAX_NOTES];
+    juce::ComboBox cmbKeys[MAX_ZONES];
+    juce::ComboBox cmbChords[MAX_ZONES];
+    juce::Label edtChordBuilder[MAX_ZONES];
+    juce::Slider sldArNoteNumber[MAX_ZONES];
+    juce::Label lblArNoteNumber[MAX_ZONES];
     juce::Slider sldArSplitValues[MAX_SPLITS];
     juce::Label lblArSplitValues[MAX_SPLITS];
     juce::Slider sldArSplitExtra; //this is the slider at the end of the first row
@@ -124,8 +112,19 @@ private:
     
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
-    int noteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
-    
+    int noteOrder[MAX_ZONES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 
+public:
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldMidiCCAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldNumberOfZonesAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldVelocityAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldOctaveAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment[MAX_ZONES];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChordsAttachment[MAX_ZONES];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitExtraValuesAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbPitchModesAttachment;
+
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessorEditor)
 };
