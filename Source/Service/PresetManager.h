@@ -32,10 +32,10 @@ public:
     int loadPreviousPreset();
     StringArray getAllPresets() const;
     String getCurrentPreset() const;
+
 private:
     void valueTreeRedirected(juce::ValueTree& treeWhichHasChanged) override;
     AudioProcessorValueTreeState& valueTreeState;
     Value currentPreset; //Value object of juce
-    
 };
 }

@@ -12,7 +12,7 @@
 #include "Service/PresetManager.h"
 
 #define MAX_NOTES 12
-#define MAX_ZONES 12
+#define MAX_ZONES 8
 #define MAX_SPLITS MAX_ZONES+1
 #define DEFAULT_NUMBEROFZONES 6
 
@@ -39,7 +39,7 @@
 
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
-const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished"});
+const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished","Custom"});
 const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7"});
 const juce::StringArray pitchModesArray({"Up" , "Centre"});
 
@@ -110,10 +110,10 @@ public:
     std::atomic<float>* splitExtra = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
     std::atomic<float>* selectedKeys[MAX_ZONES];
-    std::atomic<float>* chordValues[MAX_ZONES];
+    std::atomic<float>* selectedChord[MAX_ZONES];
     std::atomic<float>* chordNotes[MAX_ZONES][MAX_NOTES];
 
-    int chordBuilds[MAX_ZONES][MAX_NOTES];
+    int notesToPlay[MAX_ZONES][MAX_NOTES];
 
     juce::Array<int> notesPressed;
     int notePressedChannel[MAX_ZONES];

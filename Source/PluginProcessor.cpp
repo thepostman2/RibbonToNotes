@@ -21,13 +21,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
     
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDICC_ID,versionHint1},
                                                                MIDICC_NAME,
-                                                               0,
-                                                               127,
+                                                               1,
+                                                               128,
                                                                22));
     
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{NUMBEROFZONES_ID,versionHint1},
                                                                NUMBEROFZONES_NAME,
-                                                               0,
+                                                               1,
                                                                MAX_ZONES,
                                                                6));
     
@@ -122,7 +122,7 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     for(int i=0;i<MAX_ZONES;i++)
     {
         selectedKeys[i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(i));
-        chordValues[i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(i));
+        selectedChord[i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(i));
         for(int j=0;j<MAX_NOTES;j++)
         {
             chordNotes[i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(i) + "_" + std::to_string(j));
@@ -136,7 +136,7 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
         splitValues[i] = apvts.getRawParameterValue(SPLITS_ID + std::to_string(i));
     }
     *splitValues[0]=0;
-    
+    lastChannel = 1;
     BuildChords();
     
     presetManager = std::make_unique<Service::PresetManager>(apvts);
@@ -409,11 +409,11 @@ void RibbonToNotesAudioProcessor::BuildChord(int addOctaves, int zone, int key)
         int note = (int) *chordNotes[zone][j];
         if(note == 0)
         {
-            chordBuilds[zone][j] = note;
+            notesToPlay[zone][j] = note;
         }
         else
         {
-            chordBuilds[zone][j]= (key + 11 + note + addOctaves * 12)-1;
+            notesToPlay[zone][j]= (key + 11 + note + addOctaves * 12)-1;
         }
     }
 }
@@ -482,7 +482,7 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
     //loop through array
     for(int j=0;j<MAX_NOTES;j++)
     {
-        int note = chordBuilds[selectedZone][j];
+        int note = notesToPlay[selectedZone][j];
         if(((int)(*chordNotes[selectedZone][j]))==0) break;
         auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
         processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
