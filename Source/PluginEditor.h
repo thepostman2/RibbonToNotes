@@ -35,37 +35,40 @@ public:
     
     
 private:
+    //==============================================================================
+    // init functions
+    //==============================================================================
     void CreateRibbon();
     void CreateGui();
     void AddListeners();
-    int GetNumberOfZones();
-    void extracted();
-    
-    void SyncSliderValues();
-    void SyncComboBoxValues();
-    void extracted(int addOctaves, int i, int note);
-    
-    void SyncNotesAndSplits();
     void CreateDial(juce::Slider& sld);
     void CreateSlider(juce::Slider& sld);
-    void RedistributeSplitRanges();
-    void cmbChordBuilderOnChange(int i);
-    void EdtChordBuilderOnChange(int i);
-    void ChordBuild(int i);
-    void setChordParameter(int key, int j, float value);
-    bool is_validnotenumber(const juce::String& str);
 
+    //==============================================================================
+    // Apply changes when controls are changed
+    //==============================================================================
+    int GetNumberOfZones();
+    void SyncZoneSliderValues();
+    void SyncKeyAndChordModes();
+    void RedistributeSplitRanges();
+    void ChordBuild(int i);
+
+    //==============================================================================
+    // listeners
+    //==============================================================================
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
     
+    //==============================================================================
+    // Properties
+    //==============================================================================
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     RibbonToNotesAudioProcessor& audioProcessor;
     
+    // GUI elements
     GUI::PresetPanel presetPanel;
-
     juce::Slider sldMidiCC;
-    
     juce::Label lblMidiCC;
     juce::Slider sldNumberOfZones;
     juce::Label lblNumberOfZones;
@@ -75,28 +78,19 @@ private:
     juce::Label lblOctave;
     juce::ComboBox cmbPitchModes;
     
-
-    
-//    juce::ComboBox cmbKeys[MAX_ZONES];
-//    juce::ComboBox cmbChords[MAX_ZONES];
-//    juce::Label edtChordBuilder[MAX_ZONES];
-    bool edtChordChanged[MAX_ZONES];
-    juce::Slider sldArNoteNumber[MAX_ZONES];
-    juce::Label lblArNoteNumber[MAX_ZONES];
-    juce::Slider sldArSplitValues[MAX_SPLITS];
-    juce::Label lblArSplitValues[MAX_SPLITS];
-    juce::Slider sldArSplitExtra; //this is the slider at the end of the first row
-    juce::Label lblArSplitExtra; //this is the label for the slider at the end of the first row
-
-    juce::Slider sldChordNotesHelp[MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
-
     ZoneVisual ribbonZeroZone;
     juce::OwnedArray<KeyZone> ribbonKeyZone;
-    
+
+    juce::Slider sldSplitValues[MAX_SPLITS];
+    juce::Label lblSplitValues[MAX_SPLITS];
+    juce::Slider sldSplitEnd; //this is the slider at the end of the zone
+    juce::Label lblSplitEnd; //this is the label for the slider at the end of the zone
+
+    // utility variables
+    juce::Slider sldChordNotesHelp[MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
     int keyOrder[MAX_ZONES] = {1,3,5,6,8,10,12,1};
-
    
 public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldMidiCCAttachment;

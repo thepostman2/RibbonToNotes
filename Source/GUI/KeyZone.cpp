@@ -3,7 +3,7 @@
  
  KeyZone.cpp
  Created: 7 Jun 2024 12:55:07pm
- Author:  Peter
+ Author:  PJP
  
  ==============================================================================
  */
@@ -22,7 +22,6 @@ audioProcessor (p)
 KeyZone::~KeyZone()
 {
     cmbKeysAttachment = nullptr;
-    //sldSplitValuesAttachment = nullptr;
     for(int j=0;j<MAX_NOTES;j++)
     {
         sldChordNotesHelpAttachment[j]=nullptr;
@@ -64,12 +63,6 @@ void KeyZone::CreateGui()
     edtChordBuilder.onTextChange = [this] {EdtChordBuilderOnChange();};
     edtChordChanged=false;
     
-//    addAndMakeVisible(sldArSplitValue);
-//    sldArSplitValue.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
-//    sldSplitValuesAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, SPLITS_ID + std::to_string(ID), sldArSplitValue);
-//    addAndMakeVisible(lblArSplitValue);
-    
-    
     for(int j=0;j<MAX_NOTES;j++)
     {
         addAndMakeVisible(sldChordNotesHelp[j]);
@@ -81,8 +74,6 @@ void KeyZone::CreateGui()
 
 void KeyZone::AddListeners()
 {
-    // add the listener to the slider
-    sldArNoteNumber.addListener(this);
     cmbKey.addListener(this);
     cmbChord.addListener(this);
     for(int j=0;j<MAX_NOTES;j++)
@@ -112,20 +103,16 @@ void KeyZone::resized()
     cmbKey.setVisible(true);
     cmbChord.setVisible(true);
     edtChordBuilder.setVisible(true);
-//    sldArSplitValue.setVisible(true);
-    
+
     cmbKey.setEnabled(true);
     cmbChord.setEnabled(true);
     edtChordBuilder.setEnabled(true);
-//    sldArSplitValue.setEnabled(true);
     
     cmbKey.setBounds(sideMargin, topRowA, controlWidth, textHeight);
     
     cmbChord.setBounds(sideMargin, topRowB, controlWidth, textHeight);
     
     edtChordBuilder.setBounds(sideMargin, topRowC, controlWidth, textHeight);
-//    sldArSplitValue.setBounds(0, topRowSplitSliders, splitSldrWidth, vsliderHeight);
-//    sldArSplitValue.setTextBoxStyle(juce::Slider::TextBoxBelow, false, splitSldrWidth, textHeight);
 }
 
 void KeyZone::cmbKeyOnChange()
@@ -186,22 +173,18 @@ void KeyZone::ChordBuild()
         {
             auto value =chordStringArray[j].getIntValue();
             *audioProcessor.chordNotes[ID][j] =value;
-            setChordParameter(j,value);
+            SetChordParameter(j,value);
         }
         else
         {
             *audioProcessor.chordNotes[ID][j] = 0;
-            setChordParameter(j,0);
+            SetChordParameter(j,0);
         }
     }
 }
 
-void KeyZone::setChordParameter(int j, float value)
+void KeyZone::SetChordParameter(int j, float value)
 {
-    //    juce::AudioProcessorParameterWithID* pParam = audioProcessor.apvts.getParameter(CHORDBUILDS_ID + std::to_string(key) + "_" + std::to_string(j));
-    //    pParam->beginChangeGesture();
-    //    pParam->setValue(value);
-    //    pParam->endChangeGesture();
     sldChordNotesHelp[j].setValue(value, juce::sendNotificationSync);
 }
 
@@ -221,8 +204,6 @@ bool KeyZone::is_validnotenumber(const juce::String& str)
 
 void KeyZone::sliderValueChanged(juce::Slider* slider)
 {
-    ;
-//    *audioProcessor.splitValues[ID] = sldArSplitValue.getValue();
 }
 
 void KeyZone::comboBoxChanged(juce::ComboBox* combobox)
