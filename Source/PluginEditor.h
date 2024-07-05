@@ -11,36 +11,10 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "GUI/PresetPanel.h"
+#include "GUI/KeyZone.h"
 #include "Service/PresetManager.h"
 
 //==============================================================================
-struct RibbonZoneVisual : public juce::Component
-{
-    RibbonZoneVisual(){setPaintingIsUnclipped(true);}
-    
-    void paint (juce::Graphics& g) override
-    {
-        juce::Rectangle<int> outline(getHeight(),getWidth());
-        g.setColour(juce::Colours::whitesmoke);
-        g.drawRect(outline);
-        if(FillColourOn)
-        {
-            g.setColour(juce::Colours::red);
-            g.fillRect(outline);
-        }
-        else
-        {
-            g.setColour(juce::Colours::black);
-            g.fillRect(outline);
-        }
-    }
-    
-    bool FillColourOn;
-};
-//==============================================================================
-
-/**
- */
 class RibbonToNotesAudioProcessorEditor  : public juce::AudioProcessorEditor,
 private juce::Slider::Listener,
 private juce::ComboBox::Listener,
@@ -61,6 +35,7 @@ public:
     
     
 private:
+    void CreateRibbon();
     void CreateGui();
     void AddListeners();
     int GetNumberOfZones();
@@ -102,9 +77,9 @@ private:
     
 
     
-    juce::ComboBox cmbKeys[MAX_ZONES];
-    juce::ComboBox cmbChords[MAX_ZONES];
-    juce::Label edtChordBuilder[MAX_ZONES];
+//    juce::ComboBox cmbKeys[MAX_ZONES];
+//    juce::ComboBox cmbChords[MAX_ZONES];
+//    juce::Label edtChordBuilder[MAX_ZONES];
     bool edtChordChanged[MAX_ZONES];
     juce::Slider sldArNoteNumber[MAX_ZONES];
     juce::Label lblArNoteNumber[MAX_ZONES];
@@ -115,8 +90,8 @@ private:
 
     juce::Slider sldChordNotesHelp[MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
 
-
-    RibbonZoneVisual ribbonZoneVisuals[MAX_SPLITS+1];
+    ZoneVisual ribbonZeroZone;
+    juce::OwnedArray<KeyZone> ribbonKeyZone;
     
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}

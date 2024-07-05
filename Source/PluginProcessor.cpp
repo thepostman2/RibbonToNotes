@@ -65,7 +65,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                        1,
                                                                        chordsArray.size(),
                                                                        1));
-            int chordBuildDefault = 1;
+            int chordBuildDefault = 1;//default only base note
             for(int j=0;j<MAX_NOTES;j++)
             {
                 params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID+ std::to_string(i) + "_" + std::to_string(j),versionHint1},
@@ -470,7 +470,7 @@ void RibbonToNotesAudioProcessor::AddPreviousChannelNotesSentNotesOff(juce::Midi
                     
                     //create note off message for this note
                     auto message2 = juce::MidiMessage::noteOff(notePressedChannel[i],note);
-                    processedMidi.addEvent(message2, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
+                    processedMidi.addEvent(message2,  juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
                 }
             }
             notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared

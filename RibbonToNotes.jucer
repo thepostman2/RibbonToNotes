@@ -13,6 +13,8 @@
       </GROUP>
       <GROUP id="{9A127437-252B-99AB-A46A-6947BBCD0E0F}" name="GUI">
         <FILE id="sB4D4H" name="PresetPanel.h" compile="0" resource="0" file="Source/GUI/PresetPanel.h"/>
+        <FILE id="uTdp7s" name="KeyZone.cpp" compile="1" resource="0" file="Source/GUI/KeyZone.cpp"/>
+        <FILE id="wr85Hq" name="KeyZone.h" compile="0" resource="0" file="Source/GUI/KeyZone.h"/>
       </GROUP>
       <FILE id="IbJPvz" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
