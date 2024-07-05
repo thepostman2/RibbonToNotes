@@ -365,6 +365,12 @@ void RibbonToNotesAudioProcessorEditor::SyncKeyAndChordModes()
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
+    if(slider == &sldOctave)
+    {
+        *audioProcessor.octaves = sldOctave.getValue();
+        audioProcessor.BuildChords();
+    }
+    
     *audioProcessor.numberOfZones = sldNumberOfZones.getValue();
     if(slider == &sldSplitEnd || slider == &sldSplitValues[0])
     {
@@ -373,7 +379,7 @@ void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
         *audioProcessor.splitValues[(int)(*audioProcessor.numberOfZones)] = (int) sldSplitEnd.getValue();
         RedistributeSplitRanges();
     }
-    
+
     SyncZoneSliderValues();
 }
 //==============================================================================

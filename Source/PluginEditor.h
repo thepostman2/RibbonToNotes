@@ -51,7 +51,6 @@ private:
     void SyncZoneSliderValues();
     void SyncKeyAndChordModes();
     void RedistributeSplitRanges();
-    void ChordBuild(int i);
 
     //==============================================================================
     // listeners

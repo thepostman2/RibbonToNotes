@@ -39,7 +39,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
     
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{OCTAVES_ID,versionHint1},
                                                                OCTAVES_NAME,
-                                                               0,
+                                                               -1,
                                                                8,
                                                                2));
     
