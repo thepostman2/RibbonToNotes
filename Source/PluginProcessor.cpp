@@ -42,7 +42,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                -1,
                                                                8,
                                                                2));
-    
+
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHANNELIN_ID,versionHint1},
+                                                               CHANNELIN_NAME,
+                                                               0,
+                                                               16,
+                                                               0));
+
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHANNELOUT_ID,versionHint1},
+                                                               CHANNELOUT_NAME,
+                                                               0,
+                                                               16,
+                                                               0));
+
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{PITCHMODES_ID,versionHint1},
                                                                PITCHMODES_NAME,
                                                                1,
@@ -117,6 +129,8 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     numberOfZones = apvts.getRawParameterValue(NUMBEROFZONES_ID);
     noteVelocity = apvts.getRawParameterValue(VELOCITY_ID);
     octaves = apvts.getRawParameterValue(OCTAVES_ID);
+    channelIn = apvts.getRawParameterValue(CHANNELIN_ID);
+    channelOut = apvts.getRawParameterValue(CHANNELOUT_ID);
     pitchMode = apvts.getRawParameterValue(PITCHMODES_ID);
     splitExtra = apvts.getRawParameterValue(SPLITEXTRA_ID);
     for(int i=0;i<MAX_ZONES;i++)
@@ -250,6 +264,19 @@ bool RibbonToNotesAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
 
 void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBuffer &midiMessages)
 {
+    // if listening to specific channels and channel is not the same, do nothing
+    if((int) *channelIn != 0 && channel != (int) *channelIn)
+    {
+        return;
+    }
+    
+    // if specific channel out has been set, change the channel
+    if((int) *channelOut != 0)
+    {
+        channel = (int) *channelOut;
+    }
+    
+    // determine selected zone
     for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
     {
         if(ccval <= *splitValues[0])
@@ -262,6 +289,7 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
             activeZone = 0;
             break;
         }
+        
         //if ccval is in range according to spliValues array, start the note
         if(ccval < *splitValues[i+1])
         {
@@ -275,10 +303,12 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
                 notePressedChannel[i] = channel;
                 AddSentNotesOn(midiMessages,i, channel);
             }
+            
             //stop the loop as soon as a range was valid
             break;
         }
     }
+    lastChannel = channel;
 }
 
 void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
@@ -327,12 +357,10 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         PlayNotes(ccval, channel, midiMessages);
     }
     lastCCValue = ccval;
-    lastChannel = channel;
 }
 
 bool RibbonToNotesAudioProcessor::HasChanged(int ccval, int channel)
 {
-    if(channel != lastChannel) return true;
     for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
     {
         if(lastCCValue <= *splitValues[i])
@@ -450,33 +478,6 @@ void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer&
     notesPressed.removeRange(0,notesPressed.size());
 }
 
-void RibbonToNotesAudioProcessor::AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int exceptZone)
-{
-    for(int i=0;i<MAX_ZONES;i++)
-    {
-        //if note was pressed, the channel was set.
-        if(notePressedChannel[i]>0 && i!=exceptZone)
-        {
-            for(int j=0;j<MAX_NOTES;j++)
-            {
-                //get j note of the current selected chord
-                int note = ((int)(*selectedKeys[i])) + ((int)(*chordNotes[i][j])) - 1;
-                if(note < 1){note += 12;}
-                //create  a noteon message with velocity=0 (for devices that do not respond to note off).
-                if(note < 128)
-                {
-                    auto message1 = juce::MidiMessage::noteOn(notePressedChannel[i], note, 0.0f);
-                    processedMidi.addEvent(message1, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-                    
-                    //create note off message for this note
-                    auto message2 = juce::MidiMessage::noteOff(notePressedChannel[i],note);
-                    processedMidi.addEvent(message2,  juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-                }
-            }
-            notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared
-        }
-    }
-}
 void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel)
 {
     //loop through array

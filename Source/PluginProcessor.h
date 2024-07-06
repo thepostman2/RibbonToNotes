@@ -24,6 +24,10 @@
 #define VELOCITY_NAME "Velocity"
 #define OCTAVES_ID "octaves"
 #define OCTAVES_NAME "Octaves"
+#define CHANNELIN_ID "channelIn"
+#define CHANNELIN_NAME "Channel In"
+#define CHANNELOUT_ID "channelOut"
+#define CHANNELOUT_NAME "Channel Out"
 #define PITCHMODES_ID "pitchmodes"
 #define PITCHMODES_NAME "PitchModes"
 #define KEYS_ID "keys"
@@ -42,6 +46,8 @@ const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","
 const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished","Custom"});
 const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7"});
 const juce::StringArray pitchModesArray({"Up" , "Centre"});
+const juce::StringArray channelInArray({"All","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
+const juce::StringArray channelOutArray({"Same","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
 
 //==============================================================================
 /**
@@ -96,7 +102,6 @@ public:
     bool HasChanged(int ccval, int channel);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
     void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
-    void AddPreviousChannelNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel);
     int GetNote(int basenote, int addNote, int numberOfOctaves);
     void BuildChords();
@@ -106,6 +111,8 @@ public:
     std::atomic<float>* numberOfZones = nullptr;
     std::atomic<float>* noteVelocity = nullptr;
     std::atomic<float>* octaves = nullptr;
+    std::atomic<float>* channelIn = nullptr;
+    std::atomic<float>* channelOut = nullptr;
     std::atomic<float>* pitchMode = nullptr;
     std::atomic<float>* splitExtra = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];

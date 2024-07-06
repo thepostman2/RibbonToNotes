@@ -153,6 +153,7 @@ void KeyZone::cmbChordBuilderOnChange()
             edtChordChanged=false;
         }
     }
+    audioProcessor.BuildChords();
 }
 
 void KeyZone::EdtChordBuilderOnChange()
@@ -208,6 +209,4 @@ void KeyZone::sliderValueChanged(juce::Slider* slider)
 
 void KeyZone::comboBoxChanged(juce::ComboBox* combobox)
 {
-    *audioProcessor.selectedKeys[ID] = cmbKey.getSelectedId();;
-    *audioProcessor.selectedChord[ID] = cmbChord.getSelectedId();
 }

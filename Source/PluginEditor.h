@@ -75,8 +75,13 @@ private:
     juce::Label lblVelocity;
     juce::Slider sldOctave;
     juce::Label lblOctave;
+    juce::ComboBox cmbChannelIn;
+    juce::Label lblChannelIn;
+    juce::ComboBox cmbChannelOut;
+    juce::Label lblChannelOut;
     juce::ComboBox cmbPitchModes;
-    
+    juce::Label lblPitchModes;
+
     ZoneVisual ribbonZeroZone;
     juce::OwnedArray<KeyZone> ribbonKeyZone;
 
@@ -96,6 +101,8 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldNumberOfZonesAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldVelocityAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldOctaveAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChannelInAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChannelOutAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChordsAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];

@@ -38,6 +38,8 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
     sldNumberOfZonesAttachment = nullptr;
     sldVelocityAttachment = nullptr;
     sldOctaveAttachment = nullptr;
+    cmbChannelInAttachment = nullptr;
+    cmbChannelOutAttachment = nullptr;
     cmbPitchModesAttachment = nullptr;
     for(int i=0;i<MAX_SPLITS;i++)
     {
@@ -101,17 +103,33 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     
     CreateDial(sldOctave);
     sldOctaveAttachment=std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, OCTAVES_ID, sldOctave);
-    
     lblOctave.setText("Octave", juce::dontSendNotification);
     lblOctave.attachToComponent(&sldOctave, false);
     lblOctave.setJustificationType(juce::Justification::centred);
-    
+
+    addAndMakeVisible(cmbChannelIn);
+    cmbChannelIn.addItemList(channelInArray, 1);
+    cmbChannelInAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, CHANNELIN_ID, cmbChannelIn);
+    lblChannelIn.setText(CHANNELIN_NAME, juce::dontSendNotification);
+    lblChannelIn.attachToComponent(&cmbChannelIn, true);
+    lblChannelIn.setJustificationType(juce::Justification::left);
+
+    addAndMakeVisible(cmbChannelOut);
+    cmbChannelOut.addItemList(channelOutArray, 1);
+    cmbChannelOutAttachment=std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, CHANNELOUT_ID, cmbChannelOut);
+    lblChannelOut.setText(CHANNELOUT_NAME, juce::dontSendNotification);
+    lblChannelOut.attachToComponent(&cmbChannelOut, true);
+    lblChannelOut.setJustificationType(juce::Justification::left);
+
     // pitchmode
     addAndMakeVisible(cmbPitchModes);
     cmbPitchModes.addItemList(pitchModesArray, 1);
     cmbPitchModesAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, PITCHMODES_ID, cmbPitchModes);
     cmbPitchModes.setEnabled(true);
-    
+    lblPitchModes.setText(PITCHMODES_NAME, juce::dontSendNotification);
+    lblPitchModes.attachToComponent(&cmbPitchModes, true);
+    lblPitchModes.setJustificationType(juce::Justification::left);
+
     // ribbon key zones
     // the first zone only sents notes off, so it is just a ZoneVisual without controls
     addAndMakeVisible(ribbonZeroZone);
@@ -196,6 +214,8 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     sldNumberOfZones.addListener (this);
     sldVelocity.addListener(this);
     sldOctave.addListener(this);
+    cmbChannelIn.addListener(this);
+    cmbChannelOut.addListener(this);
     cmbPitchModes.addListener(this);
     for(int i=0;i<MAX_SPLITS;i++)
     {
@@ -261,7 +281,9 @@ void RibbonToNotesAudioProcessorEditor::resized()
     sldVelocity.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
     sldOctave.setBounds(sideMargin + 3*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
     sldOctave.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
-    cmbPitchModes.setBounds(sideMargin + 4*(sideMargin + controlWidth), topGeneralControls, controlWidth, textHeight);
+    cmbChannelIn.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls , controlWidth,  textHeight);
+    cmbChannelOut.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls + (textHeight + topMargin), controlWidth,  textHeight);
+    cmbPitchModes.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls + 2* (textHeight + topMargin), controlWidth, textHeight);
     
     ribbonZeroZone.setBounds(zoneX + sideMargin, topZone, firstZoneWidth, zoneHeight);//0.5*zoneWidth); //Somehow making it smaller gives problems with the rendering.
     
