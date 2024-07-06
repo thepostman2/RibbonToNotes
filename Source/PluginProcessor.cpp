@@ -261,6 +261,8 @@ bool RibbonToNotesAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
 #endif
 }
 #endif
+
+
 //==============================================================================
 void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
@@ -295,14 +297,22 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     }
 
     //play notes or stop playing notes based on the cc value
-    if(HasChanged(ccval, channel))
+    if(HasChanged(ccval))
     {
         AddNotesToPlayToBuffer(ccval, channel, notesToPlayBuffer);
     }
     lastCCValue = ccval;
     
     // some programs do not except multiple messages added to the buffer.
-    // so adding them one by one each time solves this problem
+    // so adding the notes one by one solves this problem
+    // Mind you that processblock fires each sample time, so for the user
+    // it is as if the notes are played immediately.
+    PlayNextNote(midiMessages);
+}
+
+// plays the first of the buffered notes, and removes it from the buffer
+void RibbonToNotesAudioProcessor::PlayNextNote(juce::MidiBuffer &midiMessages)
+{
     juce::MidiBuffer tmpBuffer;
     int i = 0;
     for(const auto metadata : notesToPlayBuffer)
@@ -310,18 +320,19 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         auto message = metadata.getMessage();
         if(i<1)
         {
+            // first message of the buffer is excecuted
             midiMessages.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
         }
         else
         {
+            // other messages are copied to temporary buffer
             tmpBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
         }
         i++;
     }
+    // swap the buffer, so the excuted message is removed from the buffer.
     notesToPlayBuffer.swapWith(tmpBuffer);
-}
-
-//==============================================================================
+}//==============================================================================
 bool RibbonToNotesAudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
@@ -366,6 +377,8 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new RibbonToNotesAudioProcessor();
 }
 
+//==============================================================================
+// functions for adding the note on and offs to the buffer
 //==============================================================================
 void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages)
 {
@@ -415,7 +428,7 @@ void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel,
     }
     lastChannel = channel;
 }
-
+// add an all notes off to the buffer for given channel and any other channel that was previously used
 void RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel)
 {
     processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
@@ -432,6 +445,7 @@ void RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processed
     }
 }
 
+// add notes off for previous played notes on the selected channel
 void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel)
 {
     //loop through array
@@ -448,6 +462,7 @@ void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer&
     notesPressed.removeRange(0,notesPressed.size());
 }
 
+// add notes on for the selected zone on the given channel
 void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel)
 {
     //loop through array
@@ -462,6 +477,9 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
 }
 
 //==============================================================================
+// Utility functions
+//==============================================================================
+// build a chord for each zone based on the key and the chord notes
 void RibbonToNotesAudioProcessor::BuildChords()
 {
     int maxNote = 0;
@@ -505,11 +523,12 @@ void RibbonToNotesAudioProcessor::BuildChords()
                 maxNote = key;
             }
         }
-        BuildChord(octave + addOctaves, i, key);
+        GetNoteNumbersForChord(octave + addOctaves, i, key);
     }
 }
 
-void RibbonToNotesAudioProcessor::BuildChord(int addOctaves, int zone, int key)
+// calculate the notes to be played for a specific zone
+void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int zone, int key)
 {
     for(int j=0;j<MAX_NOTES;j++)
     {
@@ -524,8 +543,8 @@ void RibbonToNotesAudioProcessor::BuildChord(int addOctaves, int zone, int key)
         }
     }
 }
-
-bool RibbonToNotesAudioProcessor::HasChanged(int ccval, int channel)
+// determine if the cc value has changed to another zone
+bool RibbonToNotesAudioProcessor::HasChanged(int ccval)
 {
     for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
     {

@@ -70,7 +70,9 @@ public:
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 #endif
     
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void extracted(juce::MidiBuffer &midiMessages);
+    
+void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -99,14 +101,15 @@ public:
     int lastCCValue;
     int lastChannel;
 
+    void PlayNextNote(juce::MidiBuffer &midiMessages);
     void AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages);
-    void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
+    void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel);
 
     void BuildChords();
-    void BuildChord(int addOctaves, int i, int note);
-    bool HasChanged(int ccval, int channel);
+    void GetNoteNumbersForChord(int addOctaves, int i, int note);
+    bool HasChanged(int ccval);
 
     std::atomic<float>* midiCC = nullptr;
     std::atomic<float>* numberOfZones = nullptr;
