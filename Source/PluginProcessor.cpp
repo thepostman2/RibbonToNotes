@@ -82,7 +82,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
             {
                 params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID+ std::to_string(i) + "_" + std::to_string(j),versionHint1},
                                                                            CHORDBUILDS_NAME,
-                                                                           0,
+                                                                           -128,
                                                                            128,
                                                                            chordBuildDefault));
                 chordBuildDefault = 0;//default only the base note

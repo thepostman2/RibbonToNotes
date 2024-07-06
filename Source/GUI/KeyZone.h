@@ -65,10 +65,9 @@ public:
     //==============================================================================
     // Apply changes when controls are changed
     //==============================================================================
-    void cmbKeyOnChange();
     void cmbChordBuilderOnChange();
     void EdtChordBuilderOnChange();
-    void ChordBuild();
+    void GetChordFromChordString();
     void SetChordParameter(int j, float value);
     bool is_validnotenumber(const juce::String& str);
 

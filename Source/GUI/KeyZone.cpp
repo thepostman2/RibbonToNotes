@@ -115,18 +115,13 @@ void KeyZone::resized()
     edtChordBuilder.setBounds(sideMargin, topRowC, controlWidth, textHeight);
 }
 
-void KeyZone::cmbKeyOnChange()
-{
-    ChordBuild();
-}
-
 void KeyZone::cmbChordBuilderOnChange()
 {
     int selectedChord = cmbChord.getSelectedId();
     if(selectedChord < chordbuildsArray.size())
     {
         edtChordBuilder.setText(chordbuildsArray[selectedChord], juce::dontSendNotification);
-        ChordBuild();
+        GetChordFromChordString();
     }
     else
     {
@@ -160,11 +155,12 @@ void KeyZone::EdtChordBuilderOnChange()
 {
     edtChordChanged = true;
     *audioProcessor.selectedChord[ID] = chordbuildsArray.size();//set selectedChord to "Custom"
-    ChordBuild();
+    GetChordFromChordString();
+    audioProcessor.BuildChords();
     cmbChord.setSelectedId(chordbuildsArray.size(), juce::sendNotificationSync);//set cmbChord to "Custom"
 }
 
-void KeyZone::ChordBuild()
+void KeyZone::GetChordFromChordString()
 {
     juce::StringArray chordStringArray;
     chordStringArray.addTokens(edtChordBuilder.getText(),",","");
