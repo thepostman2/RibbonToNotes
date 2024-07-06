@@ -539,6 +539,7 @@ void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int zon
         }
         else
         {
+            if(note < 0 ) note = note + 1;
             notesToPlay[zone][j]= (key + 11 + note + addOctaves * 12)-1;
         }
     }

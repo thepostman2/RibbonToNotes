@@ -88,7 +88,7 @@ private:
     RibbonToNotesAudioProcessor& audioProcessor;
     
     bool edtChordChanged;
-    juce::Slider sldChordNotesHelp[MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
+    juce::Slider sldChordNotesHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
 
 public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment;
