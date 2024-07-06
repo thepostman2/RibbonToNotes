@@ -95,17 +95,18 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     //==============================================================================
-    double StartTime;
+    double startTime;
     int lastCCValue;
     int lastChannel;
-    void PlayNotes(int ccval, int channel, juce::MidiBuffer &midiMessages);
-    bool HasChanged(int ccval, int channel);
+
+    void AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int exceptNote);
     void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel);
-    int GetNote(int basenote, int addNote, int numberOfOctaves);
+
     void BuildChords();
     void BuildChord(int addOctaves, int i, int note);
+    bool HasChanged(int ccval, int channel);
 
     std::atomic<float>* midiCC = nullptr;
     std::atomic<float>* numberOfZones = nullptr;
@@ -134,6 +135,9 @@ public:
 private:
     std::unique_ptr<Service::PresetManager> presetManager;
     int activeZone = 0;
+    juce::MidiBuffer notesToPlayBuffer;
+    int previousSampleNumber = 0;
+
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessor)

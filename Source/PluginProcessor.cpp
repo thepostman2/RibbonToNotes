@@ -116,7 +116,7 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
 #endif
                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                   //#endif
-                  ), StartTime (juce::Time::getMillisecondCounterHiRes() * 0.001)
+                  ), startTime (juce::Time::getMillisecondCounterHiRes() * 0.001)
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 , apvts(*this, nullptr, juce::Identifier("RibbonToNotes"), CreateParameterLayout())
@@ -261,8 +261,113 @@ bool RibbonToNotesAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
 #endif
 }
 #endif
+//==============================================================================
+void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+{
+    // A pure MIDI plugin shouldn't be provided any audio data
+    //jassert (buffer.getNumChannels() == 0);
+    
+    // however we use the buffer to get timing information
+    //auto numSamples = buffer.getNumSamples();
+    
+    // This is the place where you'd normally do the guts of your plugin's
+    // audio processing...
+    // Make sure to reset the state if your inner loop is processing
+    // the samples and the outer loop is handling the channels.
+    // Alternatively, you can process the samples with the channels
+    // interleaved by keeping the same state.
+    
+    buffer.clear();
+        
+    int ccval = lastCCValue;
+    int channel = lastChannel;
+    //filter the cc mesagges of the selected midiCC
+    for(const auto metadata : midiMessages)
+    {
+        const auto message = metadata.getMessage();
+        //auto time = metadata.samplePosition;
+        if(message.isController() && message.getControllerNumber() == (int) *midiCC)
+        {
+            ccval = message.getControllerValue();
+            channel = message.getChannel();
+            midiMessages.clear();//remove from midibuffer
+        }
+    }
 
-void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBuffer &midiMessages)
+    //play notes or stop playing notes based on the cc value
+    if(HasChanged(ccval, channel))
+    {
+        AddNotesToPlayToBuffer(ccval, channel, notesToPlayBuffer);
+    }
+    lastCCValue = ccval;
+    
+    // some programs do not except multiple messages added to the buffer.
+    // so adding them one by one each time solves this problem
+    juce::MidiBuffer tmpBuffer;
+    int i = 0;
+    for(const auto metadata : notesToPlayBuffer)
+    {
+        auto message = metadata.getMessage();
+        if(i<1)
+        {
+            midiMessages.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        }
+        else
+        {
+            tmpBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        }
+        i++;
+    }
+    notesToPlayBuffer.swapWith(tmpBuffer);
+}
+
+//==============================================================================
+bool RibbonToNotesAudioProcessor::hasEditor() const
+{
+    return true; // (change this to false if you choose to not supply an editor)
+}
+
+juce::AudioProcessorEditor* RibbonToNotesAudioProcessor::createEditor()
+{
+    return new RibbonToNotesAudioProcessorEditor (*this);
+}
+
+//==============================================================================
+void RibbonToNotesAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    // You should use this method to store your parameters in the memory block.
+    // You could do that either as raw data, or use the XML or ValueTree classes
+    // as intermediaries to make it easy to save and load complex data.
+    auto state = apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
+}
+
+void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    // You should use this method to restore your parameters from this memory block,
+    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName (apvts.state.getType()))
+            apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
+}
+
+int RibbonToNotesAudioProcessor::getActiveZone() const
+{
+    return activeZone;
+}
+
+//==============================================================================
+// This creates new instances of the plugin..
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new RibbonToNotesAudioProcessor();
+}
+
+//==============================================================================
+void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages)
 {
     // if listening to specific channels and channel is not the same, do nothing
     if((int) *channelIn != 0 && channel != (int) *channelIn)
@@ -311,78 +416,52 @@ void RibbonToNotesAudioProcessor::PlayNotes(int ccval, int channel, juce::MidiBu
     lastChannel = channel;
 }
 
-void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel)
 {
-    // A pure MIDI plugin shouldn't be provided any audio data
-    //jassert (buffer.getNumChannels() == 0);
+    processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
     
-    // however we use the buffer to get timing information
-    //auto numSamples = buffer.getNumSamples();
-    
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    
-    buffer.clear();
-    
-    //create a new buffer
-    juce::MidiBuffer processedMidi;
-    
-    int ccval = lastCCValue;
-    int channel = lastChannel;
-    //filter the cc mesagges of the selected midiCC
-    for(const auto metadata : midiMessages)
+    //loop through array
+    for(int i=0;i<MAX_ZONES;i++)
     {
-        const auto message = metadata.getMessage();
-        //auto time = metadata.samplePosition;
-        if(message.isController() && message.getControllerNumber() == (int) *midiCC)
+        //if note was pressed, the channel was set.
+        if(notePressedChannel[i]>0)
         {
-            ccval = message.getControllerValue();
-            channel = message.getChannel();
-        }
-        else
-        {
-            processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
+            processedMidi.addEvent(juce::MidiMessage::allNotesOff(notePressedChannel[i]), juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+            notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared
         }
     }
-    //swap the original buffer with the new created one
-    //midiMessages.swapWith(processedMidi);
-    
-    //play notes or stop playing notes based on the cc value
-    if(HasChanged(ccval, channel))
-    {
-        PlayNotes(ccval, channel, midiMessages);
-    }
-    lastCCValue = ccval;
 }
 
-bool RibbonToNotesAudioProcessor::HasChanged(int ccval, int channel)
+void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel)
 {
-    for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
+    //loop through array
+    for(int i = 0; i < notesPressed.size(); i++)
     {
-        if(lastCCValue <= *splitValues[i])
-        {
-            if(i == 0 && ccval <= *splitValues[i])
-            {
-                return false;
-            }
-            if(i > 0 && ccval <= *splitValues[i])
-            {
-                return (ccval > *splitValues[i-1] == false);
-            }
-            else
-            {
-                return true;
-            }
-        }
+        auto note =notesPressed[i];
+        
+        auto message1 = juce::MidiMessage::noteOn(channel, note, 0.0f);
+        processedMidi.addEvent(message1, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        
+        auto message2 = juce::MidiMessage::noteOff(channel,note);
+        processedMidi.addEvent(message2, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
     }
-    return true;
+    notesPressed.removeRange(0,notesPressed.size());
 }
 
+void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel)
+{
+    //loop through array
+    for(int j=0;j<MAX_NOTES;j++)
+    {
+        int note = notesToPlay[selectedZone][j];
+        if(((int)(*chordNotes[selectedZone][j]))==0) break;
+        auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
+        processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        notesPressed.add(note);
+    }
+}
 
+//==============================================================================
 void RibbonToNotesAudioProcessor::BuildChords()
 {
     int maxNote = 0;
@@ -446,92 +525,25 @@ void RibbonToNotesAudioProcessor::BuildChord(int addOctaves, int zone, int key)
     }
 }
 
-void RibbonToNotesAudioProcessor::AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel)
+bool RibbonToNotesAudioProcessor::HasChanged(int ccval, int channel)
 {
-    processedMidi.addEvent(juce::MidiMessage::allNotesOff(channel), juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-    
-    //loop through array
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
     {
-        //if note was pressed, the channel was set.
-        if(notePressedChannel[i]>0)
+        if(lastCCValue <= *splitValues[i])
         {
-            processedMidi.addEvent(juce::MidiMessage::allNotesOff(notePressedChannel[i]), juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-            notePressedChannel[i]=-1; //remove the channel setting, because all notes have been cleared
+            if(i == 0 && ccval <= *splitValues[i])
+            {
+                return false;
+            }
+            if(i > 0 && ccval <= *splitValues[i])
+            {
+                return (ccval > *splitValues[i-1] == false);
+            }
+            else
+            {
+                return true;
+            }
         }
     }
-}
-
-void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel)
-{
-    //loop through array
-    for(int i = 0; i < notesPressed.size(); i++)
-    {
-        auto note =notesPressed[i];
-        
-        auto message1 = juce::MidiMessage::noteOn(channel, note, 0.0f);
-        processedMidi.addEvent(message1, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-        
-        auto message2 = juce::MidiMessage::noteOff(channel,note);
-        processedMidi.addEvent(message2, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-    }
-    notesPressed.removeRange(0,notesPressed.size());
-}
-
-void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel)
-{
-    //loop through array
-    for(int j=0;j<MAX_NOTES;j++)
-    {
-        int note = notesToPlay[selectedZone][j];
-        if(((int)(*chordNotes[selectedZone][j]))==0) break;
-        auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
-        processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - StartTime);
-        notesPressed.add(note);
-    }
-}
-
-//==============================================================================
-bool RibbonToNotesAudioProcessor::hasEditor() const
-{
-    return true; // (change this to false if you choose to not supply an editor)
-}
-
-juce::AudioProcessorEditor* RibbonToNotesAudioProcessor::createEditor()
-{
-    return new RibbonToNotesAudioProcessorEditor (*this);
-}
-
-//==============================================================================
-void RibbonToNotesAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
-{
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-    auto state = apvts.copyState();
-    std::unique_ptr<juce::XmlElement> xml (state.createXml());
-    copyXmlToBinary (*xml, destData);
-}
-
-void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
-    
-    if (xmlState.get() != nullptr)
-        if (xmlState->hasTagName (apvts.state.getType()))
-            apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
-}
-
-int RibbonToNotesAudioProcessor::getActiveZone() const
-{
-    return activeZone;
-}
-
-//==============================================================================
-// This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-    return new RibbonToNotesAudioProcessor();
+    return true;
 }
