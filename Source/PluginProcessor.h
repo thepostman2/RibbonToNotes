@@ -43,7 +43,7 @@ const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
 const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished", "Octave up", "Octave down", "Custom"});
 const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7", "1,13", "1,-12"});
-const juce::StringArray pitchModesArray({"Up" , "Centre"});
+const juce::StringArray pitchModesArray({"Up" , "In Octave"});
 const juce::StringArray channelInArray({"All","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
 const juce::StringArray channelOutArray({"Same","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
 

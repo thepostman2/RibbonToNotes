@@ -39,7 +39,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
     
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{OCTAVES_ID,versionHint1},
                                                                OCTAVES_NAME,
-                                                               -1,
+                                                               -2,
                                                                8,
                                                                2));
 
@@ -478,7 +478,7 @@ void RibbonToNotesAudioProcessor::BuildChords()
     int maxNote = 0;
     int key = 0;
     int octave = (int) *octaves;
-    int addOctaves=1;
+    int addOctaves=0;
     
     for(int i=0 ; i < MAX_ZONES; i++)
     {
@@ -494,33 +494,12 @@ void RibbonToNotesAudioProcessor::BuildChords()
             }
             maxNote = key;
         }
-        //pitchmode = centred
-        else if(*pitchMode == 2)
-        {
-            if(i > 0)
-            {
-                //pitchmode is centred around maxnote
-                auto dist = key - maxNote;
-                if(dist > 4)
-                {
-                    key = key - 12;
-                }
-                else if(dist < -7)
-                {
-                    key = key + 12;
-                }
-            }
-            else
-            {
-                //first note is centre in case of pitchmode centred
-                maxNote = key;
-            }
-        }
         GetNoteNumbersForChord(octave + addOctaves, i, key);
     }
 }
 
 // calculate the notes to be played for a specific zone
+// since key equals to one instead of zero, the counting is a bit strange
 void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int zone, int key)
 {
     for(int j=0;j<MAX_NOTES;j++)
@@ -532,8 +511,11 @@ void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int zon
         }
         else
         {
-            if(note < 0 ) note = note + 1;
-            notesToPlay[zone][j]= (key + 11 + note + addOctaves * 12)-1;
+            if(note < 0 ) note = note + 1; //offset for negative notes is -1. Correct it here.
+            if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
+            key = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
+            if(key + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
+            notesToPlay[zone][j]= (key + note + addOctaves * 12);
         }
     }
 }
