@@ -22,7 +22,7 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
     CreateRibbon();
     setSize (800, 400);
     CreateGui();
-    RedistributeSplitRanges();
+    RedistributeSplitRanges(true);
     AddListeners();
     startTimerHz(24);
 }
@@ -49,7 +49,6 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
         }
         sldSplitValuesAttachment[i] = nullptr;
     }
-    sldSplitExtraValuesAttachment = nullptr;
     for(int i=0;i<MAX_ZONES;i++)
     {
         for(int j=0;j<MAX_NOTES;j++)
@@ -146,12 +145,7 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
         sldSplitValuesAttachment[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, SPLITS_ID + std::to_string(i), sldSplitValues[i]);
         addAndMakeVisible(lblSplitValues[i]);
     }
-    
-    CreateSlider(sldSplitEnd);
-    sldSplitExtraValuesAttachment= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, SPLITEXTRA_ID, sldSplitEnd);
-    sldSplitEnd.setValue(*audioProcessor.splitExtra);
-    addAndMakeVisible(lblSplitEnd);
-    
+        
     for(int i=0;i<MAX_ZONES;i++)
     {
         for(int j=0;j<MAX_NOTES;j++)
@@ -167,27 +161,46 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
 // This functions shows the proper amount of key zones based on the selected
 // number of zones/.
 //==============================================================================
-void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges()
+void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges(bool initSplitValues)
 {
-    int valueMax = (int) *audioProcessor.splitExtra;
-    int valueMin = (int) *audioProcessor.splitValues[0];
     int zones = (int)(*audioProcessor.numberOfZones);
-    int stepSize = (valueMax - valueMin)/(zones);
+    int lastSplit = zones - 1;
+    int valueMin = (int) *audioProcessor.splitValues[0];
+    int valueMax = fmax((int) *audioProcessor.splitValues[lastSplit], valueMin + zones);
+    int stepSize = (valueMax - valueMin)/(zones-1);
+
+    if(initSplitValues)
+    {
+        stepSize = (128 - valueMin)/(zones);
+        valueMax = valueMin + (zones - 1) * stepSize;
+    }
     
     int value = valueMin;
     sldSplitValues[0].setRange(fmax(value - 0.25 * stepSize,0), fmin(value + 0.25 * stepSize,128), 1);
-    sldSplitValues[0].setValue(valueMin, juce::dontSendNotification);
+    splitValuesSetFromCode = true;
+    sldSplitValues[0].setValue(valueMin, juce::sendNotificationSync);
     
     int i=1;
-    for(;i < zones;i++)
+    int prevValue = 0;
+    for(;i < MAX_ZONES;i++)
     {
-        value = (*audioProcessor.splitValues[0]) + i * stepSize;
+        if(i < zones)
+        {
+            value = i == lastSplit ? valueMax : valueMin + i * stepSize;
+        }
+        else
+        {
+            value =  128;
+        }
         *audioProcessor.splitValues[i] = value;
-        sldSplitValues[i].setRange(fmax(value - 0.25 * stepSize,0), fmin(value + 0.25 * stepSize,128), 1);
-        sldSplitValues[i].setValue(value);
+        int min = fmin(fmax(value - 0.25 * stepSize, prevValue), value - 1);
+        int max = fmin(fmax(value + 0.25 * stepSize, value + 1),128);
+        sldSplitValues[i].setRange(min, max, 1);
+        splitValuesSetFromCode = true;
+        sldSplitValues[i].setValue(value, juce::sendNotificationSync);
+        prevValue = value;
     }
-    value = valueMax;
-    sldSplitEnd.setRange(fmax(value - 0.25 * stepSize,0), 128, 1);
+    splitValuesSetFromCode = false;
 }
 
 //==============================================================================
@@ -228,7 +241,6 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
             sldChordNotesHelp[i][j].addListener(this);
         }
     }
-    sldSplitEnd.addListener(this);
 }
 
 //==============================================================================
@@ -312,8 +324,8 @@ void RibbonToNotesAudioProcessorEditor::resized()
             sldSplitValues[i].setVisible(false);
         }
     }
-    sldSplitEnd.setBounds(splitCtrlX + sideMargin, topRowSplitSliders, splitSldrWidth, vsliderHeight);
-    sldSplitEnd.setTextBoxStyle(juce::Slider::TextBoxBelow, false, splitSldrWidth, textHeight);
+//    sldSplitEnd.setBounds(splitCtrlX + sideMargin, topRowSplitSliders, splitSldrWidth, vsliderHeight);
+//    sldSplitEnd.setTextBoxStyle(juce::Slider::TextBoxBelow, false, splitSldrWidth, textHeight);
     
 }
 
@@ -322,26 +334,19 @@ void RibbonToNotesAudioProcessorEditor::resized()
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::SyncZoneSliderValues()
 {
-    // check if number of zones has changed. If so, update the GUI.
-    auto zones = sldNumberOfZones.getValue();
-    if(zones != lastNumberOfZones)
-    {
-        lastNumberOfZones=zones;
-        RedistributeSplitRanges();
-        resized();
-    }
-    
+
+
     // get the split value settings
     for(int i=0 ; i < MAX_ZONES; i++)
     {
-        if(i<((int)(*audioProcessor.numberOfZones)))
-        {
+//        if(i<((int)(*audioProcessor.numberOfZones)))
+//        {
             *audioProcessor.splitValues[i] = sldSplitValues[i].getValue();
-        }
-        else
-        {
-            *audioProcessor.splitValues[i] = 128;
-        }
+//        }
+//        else
+//        {
+//            *audioProcessor.splitValues[i] = i < *audioProcessor.numberOfZones ? sldSplitEnd.getValue() : 128;
+//        }
     }
 }
 
@@ -387,19 +392,34 @@ void RibbonToNotesAudioProcessorEditor::SyncKeyAndChordModes()
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
+    auto zones = (int) sldNumberOfZones.getValue();
+    int lastSplit = zones - 1;
+
+    if(splitValuesSetFromCode == true)
+    {
+        splitValuesSetFromCode = false;
+        return;
+    }
     if(slider == &sldOctave)
     {
         *audioProcessor.octaves = sldOctave.getValue();
         audioProcessor.BuildChords();
+        return;
     }
-    
-    *audioProcessor.numberOfZones = sldNumberOfZones.getValue();
-    if(slider == &sldSplitEnd || slider == &sldSplitValues[0])
+        // check if number of zones has changed. If so, update the GUI.
+    else if(zones != lastNumberOfZones)
+    {
+        *audioProcessor.numberOfZones = zones;
+        lastNumberOfZones=zones;
+        RedistributeSplitRanges(true);
+        resized();
+    }
+    else if(slider == &sldSplitValues[0] || slider == &sldSplitValues[zones-1])
     {
         *audioProcessor.splitValues[0] = (int) sldSplitValues[0].getValue();
-        *audioProcessor.splitExtra = (int) sldSplitEnd.getValue();
-        *audioProcessor.splitValues[(int)(*audioProcessor.numberOfZones)] = (int) sldSplitEnd.getValue();
-        RedistributeSplitRanges();
+        *audioProcessor.splitValues[lastSplit] = (int) sldSplitValues[lastSplit].getValue();
+        *audioProcessor.splitValues[zones] = 128;
+        RedistributeSplitRanges(false);
     }
 
     SyncZoneSliderValues();

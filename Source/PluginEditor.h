@@ -50,7 +50,7 @@ private:
     int GetNumberOfZones();
     void SyncZoneSliderValues();
     void SyncKeyAndChordModes();
-    void RedistributeSplitRanges();
+    void RedistributeSplitRanges(bool initSplitValues);
 
     //==============================================================================
     // listeners
@@ -87,14 +87,13 @@ private:
 
     juce::Slider sldSplitValues[MAX_SPLITS];
     juce::Label lblSplitValues[MAX_SPLITS];
-    juce::Slider sldSplitEnd; //this is the slider at the end of the zone
-    juce::Label lblSplitEnd; //this is the label for the slider at the end of the zone
 
     // utility variables
     juce::Slider sldChordNotesHelp[MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
     int keyOrder[MAX_ZONES] = {1,3,5,6,8,10,12,1};
+    bool splitValuesSetFromCode = false;
    
 public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldMidiCCAttachment;
@@ -106,7 +105,7 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChordsAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitExtraValuesAttachment;
+//    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitExtraValuesAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbPitchModesAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_ZONES][MAX_NOTES];
 

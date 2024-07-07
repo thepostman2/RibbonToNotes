@@ -38,8 +38,6 @@
 #define CHORDBUILDS_NAME "ChordBuilds"
 #define SPLITS_ID "splits"
 #define SPLITS_NAME "Splits"
-#define SPLITEXTRA_ID "splitextra"
-#define SPLITEXTRA_NAME "SplitExtra"
 
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
@@ -118,7 +116,6 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     std::atomic<float>* channelIn = nullptr;
     std::atomic<float>* channelOut = nullptr;
     std::atomic<float>* pitchMode = nullptr;
-    std::atomic<float>* splitExtra = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
     std::atomic<float>* selectedKeys[MAX_ZONES];
     std::atomic<float>* selectedChord[MAX_ZONES];

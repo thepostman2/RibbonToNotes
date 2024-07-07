@@ -100,11 +100,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                    128,
                                                                    defaultsplit));
     }
-    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITEXTRA_ID,versionHint1},
-                                                               SPLITEXTRA_NAME,
-                                                               0,
-                                                               128,
-                                                               128));
     return {params.begin(), params.end()};
 }
 //==============================================================================
@@ -132,7 +127,6 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     channelIn = apvts.getRawParameterValue(CHANNELIN_ID);
     channelOut = apvts.getRawParameterValue(CHANNELOUT_ID);
     pitchMode = apvts.getRawParameterValue(PITCHMODES_ID);
-    splitExtra = apvts.getRawParameterValue(SPLITEXTRA_ID);
     for(int i=0;i<MAX_ZONES;i++)
     {
         selectedKeys[i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(i));
@@ -144,7 +138,6 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
         notePressedChannel[i]=-1;
     }
     
-    //int cnt = sizeof(notePressedChannel)/sizeof(notePressedChannel[0]);
     for(int i=0;i<MAX_SPLITS;i++)
     {
         splitValues[i] = apvts.getRawParameterValue(SPLITS_ID + std::to_string(i));
