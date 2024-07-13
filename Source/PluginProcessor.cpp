@@ -57,48 +57,60 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
 
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{PITCHMODES_ID,versionHint1},
                                                                PITCHMODES_NAME,
+                                                               0,
                                                                1,
-                                                               2,
-                                                               1));
+                                                               0));
+
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ACTIVEALTERNATIVE_ID,versionHint1},
+                                                               ACTIVEALTERNATIVE_NAME,
+                                                               0,
+                                                               7,
+                                                               0));
     int stepSize = 127/DEFAULT_NUMBEROFZONES;
     bool enabled = true;
     
-    for(int i=0;i<MAX_SPLITS;i++)
+    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
     {
-        if(i<MAX_ZONES)
+        for(int i=0;i<MAX_SPLITS;i++)
         {
-            params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{KEYS_ID + std::to_string(i),versionHint1},
-                                                                       KEYS_NAME,
-                                                                       1,
-                                                                       12,
-                                                                       defaultNoteOrder[i]));
-            params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDS_ID + std::to_string(i),versionHint1},
-                                                                       CHORDS_NAME,
-                                                                       1,
-                                                                       chordsArray.size(),
-                                                                       1));
-            int chordBuildDefault = 1;//default only base note
-            for(int j=0;j<MAX_NOTES;j++)
+            if(i<MAX_ZONES)
             {
-                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID+ std::to_string(i) + "_" + std::to_string(j),versionHint1},
-                                                                           CHORDBUILDS_NAME,
-                                                                           -128,
+                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{KEYS_ID + std::to_string(alt) + "_" + std::to_string(i),versionHint1},
+                                                                           KEYS_NAME,
+                                                                           1,
+                                                                           12,
+                                                                           defaultNoteOrder[i]));
+                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDS_ID + std::to_string(alt) + "_" + std::to_string(i),versionHint1},
+                                                                           CHORDS_NAME,
+                                                                           1,
+                                                                           chordsArray.size(),
+                                                                           1));
+                int chordBuildDefault = 1;//default only base note
+                for(int j=0;j<MAX_NOTES;j++)
+                {
+                    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID + std::to_string(alt) + "_" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
+                                                                               CHORDBUILDS_NAME,
+                                                                               -128,
+                                                                               128,
+                                                                               chordBuildDefault));
+                    chordBuildDefault = 0;//default only the base note
+                }
+            }
+            if(i >= DEFAULT_NUMBEROFZONES)
+            {
+                enabled=false;
+            }
+            int defaultsplit = enabled? 1 + i * stepSize:0;
+            if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
+            if(alt == 0)
+            {
+                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITS_ID + std::to_string(i),versionHint1},
+                                                                           SPLITS_NAME,
+                                                                           0,
                                                                            128,
-                                                                           chordBuildDefault));
-                chordBuildDefault = 0;//default only the base note
+                                                                           defaultsplit));
             }
         }
-        if(i >= DEFAULT_NUMBEROFZONES)
-        {
-            enabled=false;
-        }
-        int defaultsplit = enabled? 1 + i * stepSize:0;
-        if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
-        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITS_ID + std::to_string(i),versionHint1},
-                                                                   SPLITS_NAME,
-                                                                   0,
-                                                                   128,
-                                                                   defaultsplit));
     }
     return {params.begin(), params.end()};
 }
@@ -127,24 +139,30 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     channelIn = apvts.getRawParameterValue(CHANNELIN_ID);
     channelOut = apvts.getRawParameterValue(CHANNELOUT_ID);
     pitchMode = apvts.getRawParameterValue(PITCHMODES_ID);
-    for(int i=0;i<MAX_ZONES;i++)
-    {
-        selectedKeys[i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(i));
-        selectedChord[i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(i));
-        for(int j=0;j<MAX_NOTES;j++)
-        {
-            chordNotes[i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(i) + "_" + std::to_string(j));
-        }
-        notePressedChannel[i]=-1;
-    }
-    
+    activeAlternative = apvts.getRawParameterValue(ACTIVEALTERNATIVE_ID);
+
     for(int i=0;i<MAX_SPLITS;i++)
     {
         splitValues[i] = apvts.getRawParameterValue(SPLITS_ID + std::to_string(i));
     }
     *splitValues[0]=0;
     lastChannel = 1;
-    BuildChords();
+
+    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
+    {
+        for(int i=0;i<MAX_ZONES;i++)
+        {
+            selectedKeys[alt][i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(alt) + "_" + std::to_string(i));
+            selectedChord[alt][i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(alt) + "_" + std::to_string(i));
+            for(int j=0;j<MAX_NOTES;j++)
+            {
+                chordNotes[alt][i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(alt) + "_" + std::to_string(i) + "_" + std::to_string(j));
+            }
+            notePressedChannel[i]=-1;
+        }
+        BuildChords(alt);
+    }
+    
     
     presetManager = std::make_unique<Service::PresetManager>(apvts);
 }
@@ -358,6 +376,11 @@ void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int siz
             apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
+int RibbonToNotesAudioProcessor::getActiveAlternative() const
+{
+    return (int) *activeAlternative;
+}
+
 int RibbonToNotesAudioProcessor::getActiveZone() const
 {
     return activeZone;
@@ -388,7 +411,7 @@ void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel,
     }
     
     // determine selected zone
-    for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
+    for(int zone=0 ; zone < ((int)(*numberOfZones)) ;zone++)
     {
         if(ccval <= *splitValues[0])
         {
@@ -402,17 +425,17 @@ void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel,
         }
         
         //if ccval is in range according to spliValues array, start the note
-        if(ccval < *splitValues[i+1])
+        if(ccval < *splitValues[zone+1])
         {
             //only do something if the same note is not already pressed
-            if(activeZone != i+1)//notePressedChannel[i] != channel)
+            if(activeZone != zone+1)//notePressedChannel[i] != channel)
             {
-                activeZone = i+1;
+                activeZone = zone+1;
                 //first sent noteOff for previous notes.
                 AddPreviousNotesSentNotesOff(midiMessages, channel);
                 //create new noteOn
-                notePressedChannel[i] = channel;
-                AddSentNotesOn(midiMessages,i, channel);
+                notePressedChannel[zone] = channel;
+                AddSentNotesOn(midiMessages, getActiveAlternative(), zone, channel);
             }
             
             //stop the loop as soon as a range was valid
@@ -456,13 +479,13 @@ void RibbonToNotesAudioProcessor::AddPreviousNotesSentNotesOff(juce::MidiBuffer&
 }
 
 // add notes on for the selected zone on the given channel
-void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel)
+void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedAlt, int selectedZone, int channel)
 {
     //loop through array
     for(int j=0;j<MAX_NOTES;j++)
     {
-        int note = notesToPlay[selectedZone][j];
-        if(((int)(*chordNotes[selectedZone][j]))==0) break;
+        int note = notesToPlay[selectedAlt][selectedZone][j];
+        if(((int)(*chordNotes[selectedAlt][selectedZone][j]))==0) break;
         auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
         processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
         notesPressed.add(note);
@@ -473,19 +496,19 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
 // Utility functions
 //==============================================================================
 // build a chord for each zone based on the key and the chord notes
-void RibbonToNotesAudioProcessor::BuildChords()
+void RibbonToNotesAudioProcessor::BuildChords(int alternative)
 {
     int maxNote = 0;
     int key = 0;
     int octave = (int) *octaves;
     int addOctaves=0;
     
-    for(int i=0 ; i < MAX_ZONES; i++)
+    for(int zone=0 ; zone < MAX_ZONES; zone++)
     {
-        key = (int) *selectedKeys[i];
+        key = (int) *selectedKeys[alternative][zone];
         
-        //pitchMode = up
-        if(*pitchMode == 1)
+        //pitchMode 0 = up
+        if(*pitchMode == 0)
         {
             //if the notevalue is lower then the highest note, just add an octave to it.
             if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
@@ -494,28 +517,27 @@ void RibbonToNotesAudioProcessor::BuildChords()
             }
             maxNote = key;
         }
-        GetNoteNumbersForChord(octave + addOctaves, i, key);
+        GetNoteNumbersForChord(octave + addOctaves, alternative, zone, key);
     }
 }
 
 // calculate the notes to be played for a specific zone
 // since key equals to one instead of zero, the counting is a bit strange
-void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int zone, int key)
+void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int key)
 {
     for(int j=0;j<MAX_NOTES;j++)
     {
-        int note = (int) *chordNotes[zone][j];
+        int note = (int) *chordNotes[alternative][zone][j];
         if(note == 0)
         {
-            notesToPlay[zone][j] = note;
+            notesToPlay[alternative][zone][j] = note;
         }
         else
         {
-            if(note < 0 ) note = note + 1; //offset for negative notes is -1. Correct it here.
             if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
-            key = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
-            if(key + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
-            notesToPlay[zone][j]= (key + note + addOctaves * 12);
+            int keynote = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
+            if(keynote + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
+            notesToPlay[alternative][zone][j]= (keynote + note + addOctaves * 12);
         }
     }
 }

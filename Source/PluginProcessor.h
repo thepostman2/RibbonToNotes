@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "Service/PresetManager.h"
 
+#define MAX_ALTERNATIVES 8
 #define MAX_NOTES 12
 #define MAX_ZONES 8
 #define MAX_SPLITS MAX_ZONES+1
@@ -30,6 +31,8 @@
 #define CHANNELOUT_NAME "Channel out"
 #define PITCHMODES_ID "pitchmodes"
 #define PITCHMODES_NAME "Pitch modes"
+#define ACTIVEALTERNATIVE_ID "activealternative"
+#define ACTIVEALTERNATIVE_NAME "Active chord section"
 #define KEYS_ID "keys"
 #define KEYS_NAME "Keys"
 #define CHORDS_ID "chords"
@@ -44,6 +47,7 @@ const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","
 const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished", "Octave up", "Octave down", "Custom"});
 const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7", "1,13", "1,-12"});
 const juce::StringArray pitchModesArray({"Up" , "In Octave"});
+const juce::StringArray activeAlternativeArray({"I" , "II", "III", "IV", "V", "VI", "VII", "VII"});
 const juce::StringArray channelInArray({"All","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
 const juce::StringArray channelOutArray({"Same","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
 
@@ -103,10 +107,10 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     void AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
-    void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedZone, int channel);
+    void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedAlt, int selectedZone, int channel);
 
-    void BuildChords();
-    void GetNoteNumbersForChord(int addOctaves, int i, int note);
+    void BuildChords(int alternative);
+    void GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int note);
     bool HasChanged(int ccval);
 
     std::atomic<float>* midiCC = nullptr;
@@ -116,17 +120,19 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     std::atomic<float>* channelIn = nullptr;
     std::atomic<float>* channelOut = nullptr;
     std::atomic<float>* pitchMode = nullptr;
+    std::atomic<float>* activeAlternative = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
-    std::atomic<float>* selectedKeys[MAX_ZONES];
-    std::atomic<float>* selectedChord[MAX_ZONES];
-    std::atomic<float>* chordNotes[MAX_ZONES][MAX_NOTES];
+    std::atomic<float>* selectedKeys[MAX_ALTERNATIVES][MAX_ZONES];
+    std::atomic<float>* selectedChord[MAX_ALTERNATIVES][MAX_ZONES];
+    std::atomic<float>* chordNotes[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];
 
-    int notesToPlay[MAX_ZONES][MAX_NOTES];
+    int notesToPlay[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];
 
     juce::Array<int> notesPressed;
     int notePressedChannel[MAX_ZONES];
     int getActiveZone() const;
-    
+    int getActiveAlternative() const;
+
     Service::PresetManager& getPresetManager(){ return *presetManager; }
 
     juce::AudioProcessorValueTreeState apvts;

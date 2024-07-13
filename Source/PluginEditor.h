@@ -31,8 +31,6 @@ public:
     void timerCallback() override;
     void paint (juce::Graphics&) override;
     void resized() override;
-    void ShowRibbonZone(int area);
-    
     
 private:
     //==============================================================================
@@ -59,6 +57,12 @@ private:
     void comboBoxChanged(juce::ComboBox* combobox) override;
     
     //==============================================================================
+    // Update functions for the visuals
+    //==============================================================================
+    void ShowActiveAlternative();
+    void ShowRibbonZone(int area);
+
+    //==============================================================================
     // Properties
     //==============================================================================
     // This reference is provided as a quick way for your editor to
@@ -81,18 +85,20 @@ private:
     juce::Label lblChannelOut;
     juce::ComboBox cmbPitchModes;
     juce::Label lblPitchModes;
+    juce::ComboBox cmbActiveAlternative;
+    juce::Label lblActiveAlternative;
 
     ZoneVisual ribbonZeroZone;
-    juce::OwnedArray<KeyZone> ribbonKeyZone;
+    juce::OwnedArray<KeyZone> ribbonKeyZone[MAX_ALTERNATIVES];
 
     juce::Slider sldSplitValues[MAX_SPLITS];
     juce::Label lblSplitValues[MAX_SPLITS];
 
     // utility variables
-    juce::Slider sldChordNotesHelp[MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
+    juce::Slider sldChordNotesHelp[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
-    int keyOrder[MAX_ZONES] = {1,3,5,6,8,10,12,1};
+    int rootKey[MAX_ALTERNATIVES];
     bool splitValuesSetFromCode = false;
    
 public:
@@ -105,9 +111,10 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChordsAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
-//    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitExtraValuesAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbPitchModesAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_ZONES][MAX_NOTES];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbActiveAlternativeAttachment;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];
 
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessorEditor)

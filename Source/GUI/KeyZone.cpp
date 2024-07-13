@@ -11,8 +11,8 @@
 #include "KeyZone.h"
 
 
-KeyZone::KeyZone ( RibbonToNotesAudioProcessor& p, int zoneid)
-: ZoneVisual(zoneid),
+KeyZone::KeyZone ( RibbonToNotesAudioProcessor& p, int alternativeid, int zoneid)
+: ZoneVisual(alternativeid, zoneid),
 audioProcessor (p)
 {
     CreateGui();
@@ -32,12 +32,12 @@ void KeyZone::CreateGui()
 {
     addAndMakeVisible(cmbKey);
     cmbKey.addItemList(keysArray, 1);
-    cmbKeysAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, KEYS_ID + std::to_string(ID), cmbKey);
+    cmbKeysAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, KEYS_ID + std::to_string(ALTERNATIVE_ID) + "_" + std::to_string(ZONE_ID), cmbKey);
     cmbKey.setEnabled(true);
     
     addAndMakeVisible(cmbChord);
     cmbChord.addItemList(chordsArray, 1);
-    cmbChordsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, CHORDS_ID + std::to_string(ID), cmbChord);
+    cmbChordsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, CHORDS_ID + std::to_string(ALTERNATIVE_ID) + "_" + std::to_string(ZONE_ID), cmbChord);
     cmbChord.setEnabled(true);
     cmbChord.onChange = [this] {cmbChordBuilderOnChange();};
     
@@ -49,8 +49,8 @@ void KeyZone::CreateGui()
     juce::String chordBuildStr;
     for(int j=0;j<MAX_NOTES;j++)
     {
-        chordBuildStr = chordBuildStr + std::to_string((int)*audioProcessor.chordNotes[ID][j]);
-        if(j+1==MAX_NOTES || (int)*audioProcessor.chordNotes[ID][j+1] == 0)
+        chordBuildStr = chordBuildStr + std::to_string((int)*audioProcessor.chordNotes[ALTERNATIVE_ID][ZONE_ID][j]);
+        if(j+1==MAX_NOTES || (int)*audioProcessor.chordNotes[ALTERNATIVE_ID][ZONE_ID][j+1] == 0)
         {
             break;
         }
@@ -67,8 +67,8 @@ void KeyZone::CreateGui()
     {
         addAndMakeVisible(sldChordNotesHelp[j]);
         sldChordNotesHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
-        sldChordNotesHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(ID)+ "_" + std::to_string(j), sldChordNotesHelp[j]);
-        sldChordNotesHelp[j].setValue(*audioProcessor.chordNotes[ID][j], juce::sendNotificationSync);
+        sldChordNotesHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(ALTERNATIVE_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldChordNotesHelp[j]);
+        sldChordNotesHelp[j].setValue(*audioProcessor.chordNotes[ALTERNATIVE_ID][ZONE_ID][j], juce::sendNotificationSync);
     }
 }
 
@@ -91,19 +91,12 @@ void KeyZone::resized()
     auto topMargin = height * 0.08;
     auto sideMargin = topMargin;
     auto controlWidth = width - 2 * sideMargin ;
-    auto splitSldrWidth = controlWidth * 0.5;
     int textHeight = 3 * topMargin;
-    auto vsliderHeight = 2 * textHeight;
     
     int topRowA = topMargin;
     int topRowB = topRowA + topMargin + textHeight;
     int topRowC = topRowB + topMargin + textHeight;
-    int topRowSplitSliders = topRowC + topMargin + textHeight;
     
-    cmbKey.setVisible(true);
-    cmbChord.setVisible(true);
-    edtChordBuilder.setVisible(true);
-
     cmbKey.setEnabled(true);
     cmbChord.setEnabled(true);
     edtChordBuilder.setEnabled(true);
@@ -115,9 +108,18 @@ void KeyZone::resized()
     edtChordBuilder.setBounds(sideMargin, topRowC, controlWidth, textHeight);
 }
 
+void KeyZone::setVisible(bool visible)
+{
+    ZoneVisual::setVisible(visible);
+    cmbKey.setVisible(visible);
+    cmbChord.setVisible(visible);
+    edtChordBuilder.setVisible(visible);
+}
+
 void KeyZone::cmbChordBuilderOnChange()
 {
     int selectedChord = cmbChord.getSelectedId();
+
     if(selectedChord < chordbuildsArray.size())
     {
         edtChordBuilder.setText(chordbuildsArray[selectedChord], juce::dontSendNotification);
@@ -133,7 +135,7 @@ void KeyZone::cmbChordBuilderOnChange()
             for(int j=0;j<MAX_NOTES;j++)
             {
                 int notenr = sldChordNotesHelp[j].getValue();
-                *audioProcessor.chordNotes[ID][j] = notenr;
+                *audioProcessor.chordNotes[ALTERNATIVE_ID][ZONE_ID][j] = notenr;
                 if(notenr != 0)
                 {
                     chord = chord + sep + std::to_string(notenr);
@@ -148,15 +150,15 @@ void KeyZone::cmbChordBuilderOnChange()
             edtChordChanged=false;
         }
     }
-    audioProcessor.BuildChords();
+    audioProcessor.BuildChords(ALTERNATIVE_ID);
 }
 
 void KeyZone::EdtChordBuilderOnChange()
 {
     edtChordChanged = true;
-    *audioProcessor.selectedChord[ID] = chordbuildsArray.size();//set selectedChord to "Custom"
+    *audioProcessor.selectedChord[ALTERNATIVE_ID][ZONE_ID] = chordbuildsArray.size();//set selectedChord to "Custom"
     GetChordFromChordString();
-    audioProcessor.BuildChords();
+    audioProcessor.BuildChords(ALTERNATIVE_ID);
     cmbChord.setSelectedId(chordbuildsArray.size(), juce::sendNotificationSync);//set cmbChord to "Custom"
 }
 
@@ -169,12 +171,12 @@ void KeyZone::GetChordFromChordString()
         if(j<chordStringArray.size() && is_validnotenumber(chordStringArray[j]))
         {
             auto value =chordStringArray[j].getIntValue();
-            *audioProcessor.chordNotes[ID][j] =value;
+            *audioProcessor.chordNotes[ALTERNATIVE_ID][ZONE_ID][j] =value;
             SetChordParameter(j,value);
         }
         else
         {
-            *audioProcessor.chordNotes[ID][j] = 0;
+            *audioProcessor.chordNotes[ALTERNATIVE_ID][ZONE_ID][j] = 0;
             SetChordParameter(j,0);
         }
     }

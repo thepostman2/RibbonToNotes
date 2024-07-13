@@ -15,7 +15,7 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
 : AudioProcessorEditor (&p)
 , audioProcessor (p)
 , presetPanel(p.getPresetManager())
-, ribbonZeroZone(0)
+, ribbonZeroZone(0,0)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -41,6 +41,7 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
     cmbChannelInAttachment = nullptr;
     cmbChannelOutAttachment = nullptr;
     cmbPitchModesAttachment = nullptr;
+    cmbActiveAlternativeAttachment = nullptr;
     for(int i=0;i<MAX_SPLITS;i++)
     {
         if(i<MAX_ZONES)
@@ -49,11 +50,14 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
         }
         sldSplitValuesAttachment[i] = nullptr;
     }
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int alt = 0; alt < MAX_ALTERNATIVES; alt++)
     {
-        for(int j=0;j<MAX_NOTES;j++)
+        for(int zone=0;zone<MAX_ZONES;zone++)
         {
-            sldChordNotesHelpAttachment[i][j]=nullptr;
+            for(int j=0;j<MAX_NOTES;j++)
+            {
+                sldChordNotesHelpAttachment[alt][zone][j]=nullptr;
+            }
         }
     }
 }
@@ -63,10 +67,13 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::CreateRibbon()
 {
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int alt = 0;alt < MAX_ALTERNATIVES;alt++)
     {
-        ribbonKeyZone.add(new KeyZone(audioProcessor,i));
-        ribbonKeyZone[i]->cmbKey.onChange = [this] {SyncKeyAndChordModes();};
+        for(int zone=0;zone<MAX_ZONES;zone++)
+        {
+            ribbonKeyZone[alt].add(new KeyZone(audioProcessor, alt, zone));
+            ribbonKeyZone[alt][zone]->cmbKey.onChange = [this] {SyncKeyAndChordModes();};
+        }
     }
 }
 
@@ -129,14 +136,27 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblPitchModes.attachToComponent(&cmbPitchModes, true);
     lblPitchModes.setJustificationType(juce::Justification::left);
 
+    // pitchmode
+    addAndMakeVisible(cmbActiveAlternative);
+    cmbActiveAlternative.addItemList(activeAlternativeArray, 1);
+    cmbActiveAlternativeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, ACTIVEALTERNATIVE_ID, cmbActiveAlternative);
+    cmbActiveAlternative.setEnabled(true);
+    lblActiveAlternative.setText(ACTIVEALTERNATIVE_NAME, juce::dontSendNotification);
+    lblActiveAlternative.attachToComponent(&cmbActiveAlternative, true);
+    lblActiveAlternative.setJustificationType(juce::Justification::left);
+
     // ribbon key zones
     // the first zone only sents notes off, so it is just a ZoneVisual without controls
     addAndMakeVisible(ribbonZeroZone);
     
     // the other zones ar ribbon key Zones with their individual settings
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int alt=0;alt < MAX_ALTERNATIVES; alt++)
     {
-        addAndMakeVisible(ribbonKeyZone[i]);
+        rootKey[alt] = (int) *audioProcessor.selectedKeys[alt][0];
+        for(int zone=0;zone<MAX_ZONES;zone++)
+        {
+            addChildComponent(ribbonKeyZone[alt][zone]);// do not make it visible here.
+        }
     }
     
     for(int i=0;i<MAX_SPLITS;i++)
@@ -145,14 +165,16 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
         sldSplitValuesAttachment[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, SPLITS_ID + std::to_string(i), sldSplitValues[i]);
         addAndMakeVisible(lblSplitValues[i]);
     }
-        
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
     {
-        for(int j=0;j<MAX_NOTES;j++)
+        for(int zone=0;zone<MAX_ZONES;zone++)
         {
-            CreateSlider(sldChordNotesHelp[i][j]);
-            sldChordNotesHelpAttachment[i][j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(i)+ "_" + std::to_string(j), sldChordNotesHelp[i][j]);
-            sldChordNotesHelp[i][j].setValue(*audioProcessor.chordNotes[i][j], juce::sendNotificationSync);
+            for(int j=0;j<MAX_NOTES;j++)
+            {
+                CreateSlider(sldChordNotesHelp[alt][zone][j]);
+                sldChordNotesHelpAttachment[alt][zone][j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(alt)+ "_" + std::to_string(zone)+ "_" + std::to_string(j), sldChordNotesHelp[alt][zone][j]);
+                sldChordNotesHelp[alt][zone][j].setValue(*audioProcessor.chordNotes[alt][zone][j], juce::sendNotificationSync);
+            }
         }
     }
 }
@@ -230,15 +252,20 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     cmbChannelIn.addListener(this);
     cmbChannelOut.addListener(this);
     cmbPitchModes.addListener(this);
+    cmbActiveAlternative.addListener(this);
+
     for(int i=0;i<MAX_SPLITS;i++)
     {
         sldSplitValues[i].addListener(this);
     }
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
     {
-        for(int j=0;j<MAX_NOTES;j++)
+        for(int zone=0;zone<MAX_ZONES;zone++)
         {
-            sldChordNotesHelp[i][j].addListener(this);
+            for(int j=0;j<MAX_NOTES;j++)
+            {
+                sldChordNotesHelp[alt][zone][j].addListener(this);
+            }
         }
     }
 }
@@ -264,7 +291,8 @@ void RibbonToNotesAudioProcessorEditor::resized()
     // subcomponents in your editor..
     
     int activezones = (int) *audioProcessor.numberOfZones;
-    
+    int activeAlternative = audioProcessor.getActiveAlternative();
+
     auto topMargin = getHeight() * 0.02;
     auto sideMargin = topMargin;
     auto controlWidth = getWidth() / 6 - 2 * sideMargin;
@@ -281,7 +309,6 @@ void RibbonToNotesAudioProcessorEditor::resized()
     int zoneX = 0;
     int zoneHeight = getHeight() * 0.25;// 3*textHeight + 4 * topMargin;
     int topRowSplitSliders = topZone + zoneHeight;
-    int splitCtrlX = 0;
 
     presetPanel.setBounds(getLocalBounds().removeFromTop(proportionOfHeight(0.1f)));
     
@@ -296,57 +323,54 @@ void RibbonToNotesAudioProcessorEditor::resized()
     cmbChannelIn.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls , controlWidth,  textHeight);
     cmbChannelOut.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls + (textHeight + topMargin), controlWidth,  textHeight);
     cmbPitchModes.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls + 2* (textHeight + topMargin), controlWidth, textHeight);
-    
+    cmbActiveAlternative.setBounds(sideMargin + 5*(sideMargin + controlWidth), topGeneralControls + 3* (textHeight + topMargin), controlWidth, textHeight);
+
     ribbonZeroZone.setBounds(zoneX + sideMargin, topZone, firstZoneWidth, zoneHeight);//0.5*zoneWidth); //Somehow making it smaller gives problems with the rendering.
     
-    zoneX += firstZoneWidth + sideMargin;
-    for(int i=0;i<MAX_ZONES;i++)
+    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
     {
-        if(i<activezones)
+        int splitCtrlX = 0;
+        zoneX = firstZoneWidth + sideMargin;
+
+        for(int zone=0;zone<MAX_ZONES;zone++)
         {
-            ribbonKeyZone[i]->setVisible(true);
-            sldSplitValues[i].setVisible(true);
-            
-            ribbonKeyZone[i]->setEnabled(true);
-            sldSplitValues[i].setEnabled(true);
-            
-            
-            ribbonKeyZone[i]->setBounds(zoneX, topZone, zoneWidth, zoneHeight);
-            sldSplitValues[i].setBounds(splitCtrlX + sideMargin, topRowSplitSliders, splitSldrWidth, vsliderHeight);
-            sldSplitValues[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, splitSldrWidth, textHeight);
-            
-            zoneX += zoneWidth;
-            splitCtrlX += zoneWidth;
-        }
-        else
-        {
-            ribbonKeyZone[i]->setVisible(false);
-            sldSplitValues[i].setVisible(false);
+            ribbonKeyZone[alt][zone]->setBounds(zoneX, topZone, zoneWidth, zoneHeight);
+            ribbonKeyZone[alt][zone]->setVisible(alt == activeAlternative && zone < activezones);
+            ribbonKeyZone[alt][zone]->setEnabled(alt == activeAlternative && zone < activezones);
+            if(zone<activezones)
+            {
+                if(alt == 0) //sliders have to be set only once. There are no alternatives
+                {
+                    sldSplitValues[zone].setVisible(true);
+                    sldSplitValues[zone].setEnabled(true);
+                    sldSplitValues[zone].setBounds(splitCtrlX + sideMargin, topRowSplitSliders, splitSldrWidth, vsliderHeight);
+                    sldSplitValues[zone].setTextBoxStyle(juce::Slider::TextBoxBelow, false, splitSldrWidth, textHeight);
+                }
+                zoneX += zoneWidth;
+                splitCtrlX += zoneWidth;
+            }
+            else
+            {
+                if(alt == 0)
+                {
+                    sldSplitValues[zone].setVisible(false);
+                }
+            }
         }
     }
-//    sldSplitEnd.setBounds(splitCtrlX + sideMargin, topRowSplitSliders, splitSldrWidth, vsliderHeight);
-//    sldSplitEnd.setTextBoxStyle(juce::Slider::TextBoxBelow, false, splitSldrWidth, textHeight);
-    
 }
+
+
 
 //==============================================================================
 // gets the values of the sliders and makes necessary changes accordingly
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::SyncZoneSliderValues()
 {
-
-
     // get the split value settings
     for(int i=0 ; i < MAX_ZONES; i++)
     {
-//        if(i<((int)(*audioProcessor.numberOfZones)))
-//        {
-            *audioProcessor.splitValues[i] = sldSplitValues[i].getValue();
-//        }
-//        else
-//        {
-//            *audioProcessor.splitValues[i] = i < *audioProcessor.numberOfZones ? sldSplitEnd.getValue() : 128;
-//        }
+        *audioProcessor.splitValues[i] = sldSplitValues[i].getValue();
     }
 }
 
@@ -356,35 +380,36 @@ void RibbonToNotesAudioProcessorEditor::SyncZoneSliderValues()
 void RibbonToNotesAudioProcessorEditor::SyncKeyAndChordModes()
 {
     // get the selected pitchMode
-    *audioProcessor.pitchMode = cmbPitchModes.getSelectedId();
+    int activeAlternative = (int) *audioProcessor.activeAlternative;
+    
     
     //determine if the first key has been transposed to another key.
-    int transpose = ribbonKeyZone[0]->cmbKey.getSelectedId() - keyOrder[0];
+    int key = ribbonKeyZone[activeAlternative][0]->cmbKey.getSelectedId();
+    int transpose = key - rootKey[activeAlternative];
+    rootKey[activeAlternative] = key;
     
     // get the selected key and chord mode for each zone
-    for(int i=0 ; i < MAX_ZONES; i++)
+    for(int zone=0 ; zone < MAX_ZONES; zone++)
     {
         // get the selected key
-        int key = ribbonKeyZone[i]->cmbKey.getSelectedId();
+        key = ribbonKeyZone[activeAlternative][zone]->cmbKey.getSelectedId();
         
         // get the selected chord mode
-        *audioProcessor.selectedChord[i] = ribbonKeyZone[i]->cmbChord.getSelectedId();
+        *audioProcessor.selectedChord[activeAlternative][zone] = ribbonKeyZone[activeAlternative][zone]->cmbChord.getSelectedId();
         
         //in case the first key has changed, transpose the key accordingly
-        if(transpose != 0 && i > 0)
+        if(transpose != 0 && zone > 0)
         {
             key = ((key + 11 + transpose) % 12)+1;
-            keyOrder[i] = key;
-            ribbonKeyZone[i]->cmbKey.setSelectedId(key, juce::dontSendNotification);
+            ribbonKeyZone[activeAlternative][zone]->cmbKey.setSelectedId(key, juce::dontSendNotification);
         }
         
         // set the selected key
-        keyOrder[i] = key;
-        *audioProcessor.selectedKeys[i] = key;
+        *audioProcessor.selectedKeys[activeAlternative][zone] = key;
     }
     
     // rebuild the chord for each zone based on key en chord mode setting
-    audioProcessor.BuildChords();
+    audioProcessor.BuildChords(activeAlternative);
 }
 
 //==============================================================================
@@ -393,6 +418,7 @@ void RibbonToNotesAudioProcessorEditor::SyncKeyAndChordModes()
 void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
     auto zones = (int) sldNumberOfZones.getValue();
+    auto activeAlternative = audioProcessor.getActiveAlternative();
     int lastSplit = zones - 1;
 
     if(splitValuesSetFromCode == true)
@@ -403,13 +429,13 @@ void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     if(slider == &sldOctave)
     {
         *audioProcessor.octaves = sldOctave.getValue();
-        audioProcessor.BuildChords();
+        audioProcessor.BuildChords(activeAlternative);
         return;
     }
         // check if number of zones has changed. If so, update the GUI.
     else if(zones != lastNumberOfZones)
     {
-        *audioProcessor.numberOfZones = zones;
+        *audioProcessor.numberOfZones = zones; //necessary if preset is loaded
         lastNumberOfZones=zones;
         RedistributeSplitRanges(true);
         resized();
@@ -428,11 +454,30 @@ void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 void RibbonToNotesAudioProcessorEditor::comboBoxChanged(juce::ComboBox* combobox)
 {
     SyncKeyAndChordModes();
+    if(combobox == &cmbActiveAlternative)
+    {
+        ShowActiveAlternative();
+    }
 }
 
 //==============================================================================
-// Colors the selected zone when a user presses the ribbon
+// Update functions for the visuals
 //==============================================================================
+void RibbonToNotesAudioProcessorEditor::ShowActiveAlternative()
+{
+    int activeAlternative = audioProcessor.getActiveAlternative();
+    int activezones = (int) *audioProcessor.numberOfZones;
+
+    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
+    {
+        for(int zone=0;zone<MAX_ZONES;zone++)
+        {
+            ribbonKeyZone[alt][zone]->setVisible(alt == activeAlternative && zone < activezones);
+            ribbonKeyZone[alt][zone]->setEnabled(alt == activeAlternative && zone < activezones);        }
+    }
+}
+
+// Colors the selected zone when a user presses the ribbon
 void RibbonToNotesAudioProcessorEditor::ShowRibbonZone(int area)
 {
     if(area == 0)
@@ -444,11 +489,11 @@ void RibbonToNotesAudioProcessorEditor::ShowRibbonZone(int area)
         ribbonZeroZone.FillColourOn = false;
     }
     ribbonZeroZone.repaint();
-    
-    for(int i=0;i<MAX_ZONES;i++)
+    int activeAlternative = audioProcessor.getActiveAlternative();
+    for(int zone=0;zone<MAX_ZONES;zone++)
     {
-        ribbonKeyZone[i]->FillColourOn = i == (area-1);
-        ribbonKeyZone[i]->repaint();
+        ribbonKeyZone[activeAlternative][zone]->FillColourOn = zone == (area-1);
+        ribbonKeyZone[activeAlternative][zone]->repaint();
     }
 }
 

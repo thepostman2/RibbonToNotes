@@ -17,13 +17,15 @@
 class ZoneVisual : public juce::Component
 {
 public:
-    ZoneVisual(int zoneid)
+    ZoneVisual(int alternativeid, int zoneid)
     {
-        ID = zoneid;
+        ZONE_ID = zoneid;
+        ALTERNATIVE_ID = alternativeid;
         setPaintingIsUnclipped(true);
     }
     bool FillColourOn;
-    int ID;
+    int ZONE_ID;
+    int ALTERNATIVE_ID;
 
 private:
     void paint (juce::Graphics& g) override
@@ -52,7 +54,7 @@ private juce::Slider::Listener,
 private juce::ComboBox::Listener
 {
 public:
-    KeyZone (RibbonToNotesAudioProcessor&, int zoneid);
+    KeyZone (RibbonToNotesAudioProcessor&, int alternativeid, int zoneid);
     ~KeyZone() override;
 
     //==============================================================================
@@ -61,6 +63,7 @@ public:
     void CreateGui();
     void AddListeners();
     void resized() override;
+    void setVisible(bool visible) override;
 
     //==============================================================================
     // Apply changes when controls are changed
