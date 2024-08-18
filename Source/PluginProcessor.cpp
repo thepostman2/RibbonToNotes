@@ -61,56 +61,82 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                1,
                                                                0));
 
-    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ACTIVEALTERNATIVE_ID,versionHint1},
-                                                               ACTIVEALTERNATIVE_NAME,
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ACTIVEPROGRESSION_ID,versionHint1},
+                                                               ACTIVEPROGRESSION_NAME,
                                                                0,
                                                                7,
                                                                0));
     int stepSize = 127/DEFAULT_NUMBEROFZONES;
     bool enabled = true;
     
-    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
+    for(int prog=0;prog<MAX_PROGRESSIONSKNOBS;prog++)
     {
-        for(int i=0;i<MAX_SPLITS;i++)
+        if(prog<MAX_PROGRESSIONS)
         {
-            if(i<MAX_ZONES)
+            for(int i=0;i<MAX_SPLITS;i++)
             {
-                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{KEYS_ID + std::to_string(alt) + "_" + std::to_string(i),versionHint1},
-                                                                           KEYS_NAME,
-                                                                           1,
-                                                                           12,
-                                                                           defaultNoteOrder[i]));
-                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDS_ID + std::to_string(alt) + "_" + std::to_string(i),versionHint1},
-                                                                           CHORDS_NAME,
-                                                                           1,
-                                                                           chordsArray.size(),
-                                                                           1));
-                int chordBuildDefault = 1;//default only base note
-                for(int j=0;j<MAX_NOTES;j++)
+                if(i<MAX_ZONES)
                 {
-                    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID + std::to_string(alt) + "_" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
-                                                                               CHORDBUILDS_NAME,
-                                                                               -128,
+                    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{KEYS_ID + std::to_string(prog) + "_" + std::to_string(i),versionHint1},
+                                                                               KEYS_NAME,
+                                                                               1,
+                                                                               12,
+                                                                               defaultNoteOrder[i]));
+                    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDS_ID + std::to_string(prog) + "_" + std::to_string(i),versionHint1},
+                                                                               CHORDS_NAME,
+                                                                               1,
+                                                                               chordsArray.size(),
+                                                                               1));
+                    int chordBuildDefault = 1;//default only base note
+                    for(int j=0;j<MAX_NOTES;j++)
+                    {
+                        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID + std::to_string(prog) + "_" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
+                                                                                   CHORDBUILDS_NAME,
+                                                                                   -127,
+                                                                                   1278,
+                                                                                   chordBuildDefault));
+                        chordBuildDefault = 0;//default only the base note
+                    }
+                }
+                if(i >= DEFAULT_NUMBEROFZONES)
+                {
+                    enabled=false;
+                }
+                int defaultsplit = enabled? 1 + i * stepSize:0;
+                if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
+                if(prog == 0)
+                {
+                    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITS_ID + std::to_string(i),versionHint1},
+                                                                               SPLITS_NAME,
+                                                                               0,
                                                                                128,
-                                                                               chordBuildDefault));
-                    chordBuildDefault = 0;//default only the base note
+                                                                               defaultsplit));
                 }
             }
-            if(i >= DEFAULT_NUMBEROFZONES)
-            {
-                enabled=false;
-            }
-            int defaultsplit = enabled? 1 + i * stepSize:0;
-            if(i>=DEFAULT_NUMBEROFZONES) defaultsplit = 128;
-            if(alt == 0)
-            {
-                params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{SPLITS_ID + std::to_string(i),versionHint1},
-                                                                           SPLITS_NAME,
-                                                                           0,
-                                                                           128,
-                                                                           defaultsplit));
-            }
         }
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTMESSAGETYPE_ID + std::to_string(prog),versionHint1},
+                                                                   MIDIINSKALTMESSAGETYPE_NAME,
+                                                                   0,
+                                                                   2,
+                                                                   2));
+
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTCHANNEL_ID + std::to_string(prog),versionHint1},
+                                                                   MIDIINSKALTCHANNEL_NAME,
+                                                                   0,
+                                                                   16,
+                                                                   0));
+
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTNUMBER_ID + std::to_string(prog),versionHint1},
+                                                                   MIDIINSKALTNUMBER_NAME,
+                                                                   0,
+                                                                   127,
+                                                                   24+prog));
+
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTVALUE_ID + std::to_string(prog),versionHint1},
+                                                                   MIDIINSKALTVALUE_NAME,
+                                                                   0,
+                                                                   127,
+                                                                   1));
     }
     return {params.begin(), params.end()};
 }
@@ -139,7 +165,8 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     channelIn = apvts.getRawParameterValue(CHANNELIN_ID);
     channelOut = apvts.getRawParameterValue(CHANNELOUT_ID);
     pitchMode = apvts.getRawParameterValue(PITCHMODES_ID);
-    activeAlternative = apvts.getRawParameterValue(ACTIVEALTERNATIVE_ID);
+    activeProgression = apvts.getRawParameterValue(ACTIVEPROGRESSION_ID);
+    activeProgressionKnob = *activeProgression;
 
     for(int i=0;i<MAX_SPLITS;i++)
     {
@@ -148,19 +175,25 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     *splitValues[0]=0;
     lastChannel = 1;
 
-    for(int alt=0;alt<MAX_ALTERNATIVES;alt++)
+    for(int prog=0;prog<MAX_PROGRESSIONSKNOBS;prog++)
     {
-        for(int i=0;i<MAX_ZONES;i++)
+        if(prog<MAX_PROGRESSIONS)
         {
-            selectedKeys[alt][i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(alt) + "_" + std::to_string(i));
-            selectedChord[alt][i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(alt) + "_" + std::to_string(i));
-            for(int j=0;j<MAX_NOTES;j++)
+            for(int i=0;i<MAX_ZONES;i++)
             {
-                chordNotes[alt][i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(alt) + "_" + std::to_string(i) + "_" + std::to_string(j));
+                selectedKeys[prog][i] = apvts.getRawParameterValue(KEYS_ID + std::to_string(prog) + "_" + std::to_string(i));
+                selectedChord[prog][i] = apvts.getRawParameterValue(CHORDS_ID + std::to_string(prog) + "_" + std::to_string(i));
+                for(int j=0;j<MAX_NOTES;j++)
+                {
+                    chordNotes[prog][i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(prog) + "_" + std::to_string(i) + "_" + std::to_string(j));
+                }
+                notePressedChannel[i]=-1;
             }
-            notePressedChannel[i]=-1;
         }
-        BuildChords(alt);
+        midiInProgressionMessageType[prog] = apvts.getRawParameterValue(MIDIINSKALTMESSAGETYPE_ID + std::to_string(prog));
+        midiInProgressionChannel[prog] = apvts.getRawParameterValue(MIDIINSKALTCHANNEL_ID + std::to_string(prog));
+        midiInProgressionNumber[prog] = apvts.getRawParameterValue(MIDIINSKALTNUMBER_ID + std::to_string(prog));
+        midiInProgressionValueTreshold[prog] = apvts.getRawParameterValue(MIDIINSKALTVALUE_ID + std::to_string(prog));
     }
     
     
@@ -305,6 +338,10 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
             channel = message.getChannel();
             midiMessages.clear();//remove from midibuffer
         }
+        else
+        {
+            SelectProgression(message);
+        }
     }
 
     //play notes or stop playing notes based on the cc value
@@ -343,7 +380,8 @@ void RibbonToNotesAudioProcessor::PlayNextNote(juce::MidiBuffer &midiMessages)
     }
     // swap the buffer, so the excuted message is removed from the buffer.
     notesToPlayBuffer.swapWith(tmpBuffer);
-}//==============================================================================
+}
+//==============================================================================
 bool RibbonToNotesAudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
@@ -376,10 +414,11 @@ void RibbonToNotesAudioProcessor::setStateInformation (const void* data, int siz
             apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
-int RibbonToNotesAudioProcessor::getActiveAlternative() const
+int RibbonToNotesAudioProcessor::getActiveProgression() const
 {
-    return (int) *activeAlternative;
+    return (int) *activeProgression;
 }
+
 
 int RibbonToNotesAudioProcessor::getActiveZone() const
 {
@@ -396,6 +435,11 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 //==============================================================================
 // functions for adding the note on and offs to the buffer
 //==============================================================================
+void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval)
+{
+    AddNotesToPlayToBuffer(ccval, std::max((int) *channelOut,1), notesToPlayBuffer);
+}
+
 void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages)
 {
     // if listening to specific channels and channel is not the same, do nothing
@@ -435,7 +479,7 @@ void RibbonToNotesAudioProcessor::AddNotesToPlayToBuffer(int ccval, int channel,
                 AddPreviousNotesSentNotesOff(midiMessages, channel);
                 //create new noteOn
                 notePressedChannel[zone] = channel;
-                AddSentNotesOn(midiMessages, getActiveAlternative(), zone, channel);
+                AddSentNotesOn(midiMessages, getActiveProgression(), zone, channel);
             }
             
             //stop the loop as soon as a range was valid
@@ -491,12 +535,44 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
         notesPressed.add(note);
     }
 }
+//==============================================================================
+// Select progression
+//==============================================================================
+void RibbonToNotesAudioProcessor::SelectProgression(const juce::MidiMessage &midiMessage)
+{
+    auto messageType = midiMessage.isController() ? 1 : midiMessage.isNoteOn() ? 2 : 0;
+    if(messageType == 0) return;
+    
+    auto messageChannel = midiMessage.getChannel();
+    auto messageNumber = messageType == 1 ? midiMessage.getControllerNumber() : midiMessage.getNoteNumber();
+    auto messageValue = messageType == 1 ? midiMessage.getControllerValue() : midiMessage.getVelocity();
+
+    for(int i=0; i < MAX_PROGRESSIONSKNOBS;i++)
+    {
+        if(messageType == (int) *midiInProgressionMessageType[i]
+           && messageNumber == (int) *midiInProgressionNumber[i]
+           && messageValue >= (int) *midiInProgressionValueTreshold[i]
+           && ((int) *midiInProgressionChannel[i] == 0 || messageChannel == (int) *midiInProgressionChannel[i]))
+        {
+            activeProgressionKnob = i;
+        }
+    }
+}
 
 //==============================================================================
 // Utility functions
 //==============================================================================
 // build a chord for each zone based on the key and the chord notes
-void RibbonToNotesAudioProcessor::BuildChords(int alternative)
+
+void RibbonToNotesAudioProcessor::BuildChordsForAllProgressions()
+{
+    for(int prog=0;prog<MAX_PROGRESSIONS;prog++)
+    {
+        BuildChords(prog);
+    }
+}
+
+void RibbonToNotesAudioProcessor::BuildChords(int progression)
 {
     int maxNote = 0;
     int key = 0;
@@ -505,7 +581,7 @@ void RibbonToNotesAudioProcessor::BuildChords(int alternative)
     
     for(int zone=0 ; zone < MAX_ZONES; zone++)
     {
-        key = (int) *selectedKeys[alternative][zone];
+        key = (int) *selectedKeys[progression][zone];
         
         //pitchMode 0 = up
         if(*pitchMode == 0)
@@ -517,7 +593,7 @@ void RibbonToNotesAudioProcessor::BuildChords(int alternative)
             }
             maxNote = key;
         }
-        GetNoteNumbersForChord(octave + addOctaves, alternative, zone, key);
+        GetNoteNumbersForChord(octave + addOctaves, progression, zone, key);
     }
 }
 

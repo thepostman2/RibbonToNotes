@@ -12,12 +12,15 @@
 #include "PluginProcessor.h"
 #include "GUI/PresetPanel.h"
 #include "GUI/KeyZone.h"
+#include "GUI/SelectionKnob.h"
 #include "Service/PresetManager.h"
+#include "MidiLearn/MidiLearnObject.h"
 
 //==============================================================================
 class RibbonToNotesAudioProcessorEditor  : public juce::AudioProcessorEditor,
 private juce::Slider::Listener,
 private juce::ComboBox::Listener,
+private juce::Button::Listener,
 private juce::Timer
 {
 public:
@@ -37,8 +40,10 @@ private:
     // init functions
     //==============================================================================
     void CreateRibbon();
+    void CreateAltKnobs();
     void CreateGui();
     void AddListeners();
+    void RemoveListeners();
     void CreateDial(juce::Slider& sld);
     void CreateSlider(juce::Slider& sld);
 
@@ -47,7 +52,8 @@ private:
     //==============================================================================
     int GetNumberOfZones();
     void SyncZoneSliderValues();
-    void SyncKeyAndChordModes();
+    void SyncKeyAndChordModes(int progression, int zone);
+    void TransposeKeyAndChordModes(int progression, int transpose);
     void RedistributeSplitRanges(bool initSplitValues);
 
     //==============================================================================
@@ -55,6 +61,7 @@ private:
     //==============================================================================
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
+    void buttonClicked(juce::Button* button) override;
     
     //==============================================================================
     // Update functions for the visuals
@@ -85,20 +92,23 @@ private:
     juce::Label lblChannelOut;
     juce::ComboBox cmbPitchModes;
     juce::Label lblPitchModes;
-    juce::ComboBox cmbActiveAlternative;
-    juce::Label lblActiveAlternative;
+    juce::ComboBox cmbActiveProgression;
+    juce::Label lblActiveProgression;
 
     ZoneVisual ribbonZeroZone;
-    juce::OwnedArray<KeyZone> ribbonKeyZone[MAX_ALTERNATIVES];
+    juce::OwnedArray<KeyZone> ribbonKeyZone[MAX_PROGRESSIONS];
+    juce::OwnedArray<SelectionKnob> selectProgressionKnobs;
+    SelectionKnob prevProgression;
+    SelectionKnob nextProgression;
 
     juce::Slider sldSplitValues[MAX_SPLITS];
     juce::Label lblSplitValues[MAX_SPLITS];
 
     // utility variables
-    juce::Slider sldChordNotesHelp[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
+    juce::Slider sldChordNotesHelp[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
-    int rootKey[MAX_ALTERNATIVES];
+    int rootKey[MAX_PROGRESSIONS];
     bool splitValuesSetFromCode = false;
    
 public:
@@ -112,9 +122,9 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChordsAttachment[MAX_ZONES];
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldSplitValuesAttachment[MAX_SPLITS];
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbPitchModesAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbActiveAlternativeAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbActiveProgressionAttachment;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
 
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessorEditor)

@@ -11,7 +11,8 @@
 #include <JuceHeader.h>
 #include "Service/PresetManager.h"
 
-#define MAX_ALTERNATIVES 8
+#define MAX_PROGRESSIONS 6
+#define MAX_PROGRESSIONSKNOBS MAX_PROGRESSIONS+2
 #define MAX_NOTES 12
 #define MAX_ZONES 8
 #define MAX_SPLITS MAX_ZONES+1
@@ -31,8 +32,8 @@
 #define CHANNELOUT_NAME "Channel out"
 #define PITCHMODES_ID "pitchmodes"
 #define PITCHMODES_NAME "Pitch modes"
-#define ACTIVEALTERNATIVE_ID "activealternative"
-#define ACTIVEALTERNATIVE_NAME "Active chord section"
+#define ACTIVEPROGRESSION_ID "activeprogression"
+#define ACTIVEPROGRESSION_NAME "Active progression"
 #define KEYS_ID "keys"
 #define KEYS_NAME "Keys"
 #define CHORDS_ID "chords"
@@ -42,14 +43,39 @@
 #define SPLITS_ID "splits"
 #define SPLITS_NAME "Splits"
 
+#define MIDIINSKALTMESSAGETYPE_ID "midiInSKAltMessageType"
+#define MIDIINSKALTMESSAGETYPE_NAME "midiInSKAltMessageType"
+#define MIDIINSKALTCHANNEL_ID "midiInSKAltChannel"
+#define MIDIINSKALTCHANNEL_NAME "midiInSKAltChannel"
+#define MIDIINSKALTNUMBER_ID "midiInSKAltNumber"
+#define MIDIINSKALTNUMBER_NAME "midiInSKAltNumber"
+#define MIDIINSKALTVALUE_ID "midiInSKAltValue"
+#define MIDIINSKALTVALUE_NAME "midiInSKAltValue"
+
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
 const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished", "Octave up", "Octave down", "Custom"});
 const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7", "1,13", "1,-12"});
 const juce::StringArray pitchModesArray({"Up" , "In Octave"});
-const juce::StringArray activeAlternativeArray({"I" , "II", "III", "IV", "V", "VI", "VII", "VII"});
+const juce::StringArray progressionArray({"I" , "II", "III", "IV", "V", "VI"});
+const juce::StringArray progressionKnobs({"I" , "II", "III", "IV", "V", "VI", "<", ">"});
 const juce::StringArray channelInArray({"All","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
 const juce::StringArray channelOutArray({"Same","1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"});
+
+const juce::StringArray midiMessageTypeArray({"None", "CC", "Note"});
+const juce::StringArray midiValueArray({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "10", "11", "12", "13", "14", "15", "16", "17", "18", "29",
+    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
+    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
+    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
+    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+    "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+    "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
+    "120", "121", "122", "123", "124", "125", "126", "127"});
 
 //==============================================================================
 /**
@@ -104,14 +130,27 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     int lastChannel;
 
     void PlayNextNote(juce::MidiBuffer &midiMessages);
+    void AddNotesToPlayToBuffer(int ccval);
     void AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddPreviousNotesSentNotesOff(juce::MidiBuffer& processedMidi, int channel);
     void AddSentNotesOn(juce::MidiBuffer& processedMidi, int selectedAlt, int selectedZone, int channel);
 
+    //==============================================================================
+    // Select progression
+    //==============================================================================
+    void SelectProgression(const juce::MidiMessage &midiMessage);
+
+    void extracted(int &addOctaves, int alternative, int &key, int &maxNote, int octave, int zone);
+    
+//==============================================================================
+    // Utility functions
+    //==============================================================================
+    void BuildChordsForAllProgressions();
     void BuildChords(int alternative);
-    void GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int note);
+    void GetNoteNumbersForChord(int addOctaves, int progression, int zone, int note);
     bool HasChanged(int ccval);
+    
 
     std::atomic<float>* midiCC = nullptr;
     std::atomic<float>* numberOfZones = nullptr;
@@ -120,18 +159,24 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     std::atomic<float>* channelIn = nullptr;
     std::atomic<float>* channelOut = nullptr;
     std::atomic<float>* pitchMode = nullptr;
-    std::atomic<float>* activeAlternative = nullptr;
+    std::atomic<float>* activeProgression = nullptr;
     std::atomic<float>* splitValues[MAX_SPLITS];
-    std::atomic<float>* selectedKeys[MAX_ALTERNATIVES][MAX_ZONES];
-    std::atomic<float>* selectedChord[MAX_ALTERNATIVES][MAX_ZONES];
-    std::atomic<float>* chordNotes[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];
+    std::atomic<float>* selectedKeys[MAX_PROGRESSIONS][MAX_ZONES];
+    std::atomic<float>* selectedChord[MAX_PROGRESSIONS][MAX_ZONES];
+    std::atomic<float>* chordNotes[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
 
-    int notesToPlay[MAX_ALTERNATIVES][MAX_ZONES][MAX_NOTES];
+    int notesToPlay[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
 
+    std::atomic<float>*  midiInProgressionMessageType[MAX_PROGRESSIONSKNOBS];
+    std::atomic<float>*  midiInProgressionChannel[MAX_PROGRESSIONSKNOBS];
+    std::atomic<float>*  midiInProgressionNumber[MAX_PROGRESSIONSKNOBS];
+    std::atomic<float>*  midiInProgressionValueTreshold[MAX_PROGRESSIONSKNOBS];
+    
     juce::Array<int> notesPressed;
     int notePressedChannel[MAX_ZONES];
     int getActiveZone() const;
-    int getActiveAlternative() const;
+    int getActiveProgression() const;
+    int activeProgressionKnob;
 
     Service::PresetManager& getPresetManager(){ return *presetManager; }
 
