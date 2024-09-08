@@ -38,7 +38,11 @@ public:
     void EdtChordBuilderOnChange();
     void GetChordFromChordString();
     void SetChordParameter(int j, float value);
+    void SetNoteParameter(int j, float value);
     bool is_validnotenumber(const juce::String& str);
+    void BuildChords();
+    void* ribbonToNotesAudioProcessorEditor;
+    void (*BuildChordsFuncP)(void*, int progression_id);
 
     //==============================================================================
     // listeners
@@ -63,9 +67,12 @@ private:
     
     bool edtChordChanged;
     juce::Slider sldChordNotesHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
+    juce::Slider sldNotesToPlayHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
 
 public:
+
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbChordsAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_NOTES];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldNotesToPlayHelpAttachment[MAX_NOTES];
 };

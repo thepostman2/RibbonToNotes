@@ -40,6 +40,8 @@
 #define CHORDS_NAME "Chords"
 #define CHORDBUILDS_ID "chordbuilds"
 #define CHORDBUILDS_NAME "ChordBuilds"
+#define NOTESTOPLAY_ID "notestoplay"
+#define NOTESTOPLAY_NAME "Notes to play"
 #define SPLITS_ID "splits"
 #define SPLITS_NAME "Splits"
 
@@ -143,12 +145,12 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     void extracted(int &addOctaves, int alternative, int &key, int &maxNote, int octave, int zone);
     
-//==============================================================================
+    //==============================================================================
     // Utility functions
     //==============================================================================
-    void BuildChordsForAllProgressions();
-    void BuildChords(int alternative);
-    void GetNoteNumbersForChord(int addOctaves, int progression, int zone, int note);
+//    void BuildChordsForAllProgressions();
+//    void BuildChords(int alternative);
+//    void GetNoteNumbersForChord(int addOctaves, int progression, int zone, int note);
     bool HasChanged(int ccval);
     
 
@@ -165,7 +167,7 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     std::atomic<float>* selectedChord[MAX_PROGRESSIONS][MAX_ZONES];
     std::atomic<float>* chordNotes[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
 
-    int notesToPlay[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
+    std::atomic<float>* notesToPlay[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
 
     std::atomic<float>*  midiInProgressionMessageType[MAX_PROGRESSIONSKNOBS];
     std::atomic<float>*  midiInProgressionChannel[MAX_PROGRESSIONSKNOBS];

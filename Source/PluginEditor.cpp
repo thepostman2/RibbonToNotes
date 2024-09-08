@@ -28,7 +28,6 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
     RedistributeSplitRanges(true);
     AddListeners();
     startTimerHz(12);
-    audioProcessor.BuildChordsForAllProgressions();
 }
 
 //==============================================================================
@@ -55,16 +54,6 @@ RibbonToNotesAudioProcessorEditor::~RibbonToNotesAudioProcessorEditor()
         }
         sldSplitValuesAttachment[i] = nullptr;
     }
-    for(int alt = 0; alt < MAX_PROGRESSIONS; alt++)
-    {
-        for(int zone=0;zone<MAX_ZONES;zone++)
-        {
-            for(int j=0;j<MAX_NOTES;j++)
-            {
-                sldChordNotesHelpAttachment[alt][zone][j]=nullptr;
-            }
-        }
-    }
 }
 
 //==============================================================================
@@ -77,6 +66,8 @@ void RibbonToNotesAudioProcessorEditor::CreateRibbon()
         for(int zone=0;zone<MAX_ZONES;zone++)
         {
             ribbonKeyZone[alt].add(new KeyZone(audioProcessor, alt, zone));
+            ribbonKeyZone[alt][zone]->ribbonToNotesAudioProcessorEditor = this;
+            ribbonKeyZone[alt][zone]->BuildChordsFuncP = BuildChordsWrapper;
         }
     }
 }
@@ -186,18 +177,6 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
         sldSplitValuesAttachment[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, SPLITS_ID + std::to_string(i), sldSplitValues[i]);
         addAndMakeVisible(lblSplitValues[i]);
     }
-    for(int alt=0;alt<MAX_PROGRESSIONS;alt++)
-    {
-        for(int zone=0;zone<MAX_ZONES;zone++)
-        {
-            for(int j=0;j<MAX_NOTES;j++)
-            {
-                CreateSlider(sldChordNotesHelp[alt][zone][j]);
-                sldChordNotesHelpAttachment[alt][zone][j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(alt)+ "_" + std::to_string(zone)+ "_" + std::to_string(j), sldChordNotesHelp[alt][zone][j]);
-                sldChordNotesHelp[alt][zone][j].setValue(*audioProcessor.chordNotes[alt][zone][j], juce::sendNotificationSync);
-            }
-        }
-    }
 }
 
 //==============================================================================
@@ -289,10 +268,6 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
         for(int zone=0;zone<MAX_ZONES;zone++)
         {
             ribbonKeyZone[alt][zone]->addListener(this);
-            for(int j=0;j<MAX_NOTES;j++)
-            {
-                sldChordNotesHelp[alt][zone][j].addListener(this);
-            }
         }
     }
     for(int alt = 0;alt < MAX_PROGRESSIONS;alt++)
@@ -331,10 +306,6 @@ void RibbonToNotesAudioProcessorEditor::RemoveListeners()
         for(int zone=0;zone<MAX_ZONES;zone++)
         {
             ribbonKeyZone[alt][zone]->removeListener(this);
-            for(int j=0;j<MAX_NOTES;j++)
-            {
-                sldChordNotesHelp[alt][zone][j].removeListener(this);
-            }
         }
     }
     for(int alt = 0;alt < MAX_PROGRESSIONS;alt++)
@@ -506,7 +477,7 @@ void RibbonToNotesAudioProcessorEditor::SyncKeyAndChordModes(int progression, in
     }
     
     // rebuild the chord for each zone based on key en chord mode setting
-    audioProcessor.BuildChords(progression);
+    BuildChords(progression);
 }
 void RibbonToNotesAudioProcessorEditor::TransposeKeyAndChordModes(int progression, int transpose)
 {
@@ -536,7 +507,7 @@ void RibbonToNotesAudioProcessorEditor::TransposeKeyAndChordModes(int progressio
         }
     
     // rebuild the chord for each zone based on key en chord mode setting
-    audioProcessor.BuildChords(progression);
+    BuildChords(progression);
 }
 //==============================================================================
 // Listeners for the controls
@@ -554,7 +525,7 @@ void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     if(slider == &sldOctave)
     {
         *audioProcessor.octaves = sldOctave.getValue();
-        audioProcessor.BuildChordsForAllProgressions();
+        BuildChordsForAllProgressions();
         return;
     }
         // check if number of zones has changed. If so, update the GUI.
@@ -572,7 +543,6 @@ void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
         *audioProcessor.splitValues[zones] = 128;
         RedistributeSplitRanges(false);
     }
-
     SyncZoneSliderValues();
 }
 //==============================================================================
@@ -580,7 +550,7 @@ void RibbonToNotesAudioProcessorEditor::comboBoxChanged(juce::ComboBox* combobox
 {
     if(combobox == &cmbPitchModes)
     {
-        audioProcessor.BuildChordsForAllProgressions();
+        BuildChordsForAllProgressions();
         return;
     }
     if(combobox == &cmbActiveProgression)
@@ -660,7 +630,59 @@ void RibbonToNotesAudioProcessorEditor::buttonClicked(juce::Button* button)
     }
     
 }
+//==============================================================================
+// build notes to play
+//==============================================================================
+void RibbonToNotesAudioProcessorEditor::BuildChordsForAllProgressions()
+{
+    for(int prog=0;prog<MAX_PROGRESSIONS;prog++)
+    {
+        BuildChords(prog);
+    }
+}
 
+void RibbonToNotesAudioProcessorEditor::BuildChords(int progression)
+{
+    int maxNote = 0;
+    int key = 0;
+    int octave = (int) *audioProcessor.octaves;
+    int addOctaves=0;
+    
+    for(int zone=0 ; zone < MAX_ZONES; zone++)
+    {
+        key = (int) *audioProcessor.selectedKeys[progression][zone];
+        
+        //pitchMode 0 = up
+        if(*audioProcessor.pitchMode == 0)
+        {
+            //if the notevalue is lower then the highest note, just add an octave to it.
+            if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
+            {
+                addOctaves++;
+            }
+            maxNote = key;
+        }
+        GetNoteNumbersForChord(octave + addOctaves, progression, zone, key);
+    }
+}
+// calculate the notes to be played for a specific zone
+// since key equals to one instead of zero, the counting is a bit strange
+void RibbonToNotesAudioProcessorEditor::GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int key)
+{
+    for(int j=0;j<MAX_NOTES;j++)
+    {
+        int note = (int) *audioProcessor.chordNotes[alternative][zone][j];
+        if(note != 0)
+        {
+            if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
+            int keynote = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
+            if(keynote + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
+            note = keynote + note + addOctaves * 12;
+        }
+        ribbonKeyZone[alternative][zone]->SetNoteParameter(j, note);//this is for saving it to the valuetreestate
+        *audioProcessor.notesToPlay[alternative][zone][j]=note;
+    }
+}
 //==============================================================================
 // Update functions for the visuals
 //==============================================================================

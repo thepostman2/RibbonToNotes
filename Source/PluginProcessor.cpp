@@ -36,12 +36,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                  0.0f,
                                                                  1.0f,
                                                                  90.0/127.0));
-    
+    int defaultOctave = 2;
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{OCTAVES_ID,versionHint1},
                                                                OCTAVES_NAME,
                                                                -2,
                                                                8,
-                                                               2));
+                                                               defaultOctave));
 
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHANNELIN_ID,versionHint1},
                                                                CHANNELIN_NAME,
@@ -68,7 +68,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                0));
     int stepSize = 127/DEFAULT_NUMBEROFZONES;
     bool enabled = true;
+
     
+//    std::atomic<float>* notesToPlay[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
+
     for(int prog=0;prog<MAX_PROGRESSIONSKNOBS;prog++)
     {
         if(prog<MAX_PROGRESSIONS)
@@ -88,6 +91,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                                chordsArray.size(),
                                                                                1));
                     int chordBuildDefault = 1;//default only base note
+                    int noteDefault = defaultNoteOrder[i] + 24 -1 + defaultOctave * 12;
+
                     for(int j=0;j<MAX_NOTES;j++)
                     {
                         params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID + std::to_string(prog) + "_" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
@@ -96,6 +101,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                                    1278,
                                                                                    chordBuildDefault));
                         chordBuildDefault = 0;//default only the base note
+                        
+                        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{NOTESTOPLAY_ID 
+                            + std::to_string(prog) + "_"
+                            + std::to_string(i) + "_"
+                            + std::to_string(j), versionHint1},
+                                                                                   NOTESTOPLAY_NAME,
+                                                                                   0,
+                                                                                   128,
+                                                                                   noteDefault));
+                        noteDefault = 0;//default no chords
                     }
                 }
                 if(i >= DEFAULT_NUMBEROFZONES)
@@ -186,6 +201,10 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
                 for(int j=0;j<MAX_NOTES;j++)
                 {
                     chordNotes[prog][i][j] = apvts.getRawParameterValue(CHORDBUILDS_ID + std::to_string(prog) + "_" + std::to_string(i) + "_" + std::to_string(j));
+                    notesToPlay[prog][i][j] = apvts.getRawParameterValue(NOTESTOPLAY_ID 
+                                                                         + std::to_string(prog) + "_" 
+                                                                         + std::to_string(i) + "_"
+                                                                         + std::to_string(j));
                 }
                 notePressedChannel[i]=-1;
             }
@@ -336,13 +355,14 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         {
             ccval = message.getControllerValue();
             channel = message.getChannel();
-            midiMessages.clear();//remove from midibuffer
         }
         else
         {
             SelectProgression(message);
+            notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
         }
     }
+    midiMessages.clear();
 
     //play notes or stop playing notes based on the cc value
     if(HasChanged(ccval))
@@ -528,7 +548,7 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
     //loop through array
     for(int j=0;j<MAX_NOTES;j++)
     {
-        int note = notesToPlay[selectedAlt][selectedZone][j];
+        int note = (int) *notesToPlay[selectedAlt][selectedZone][j];
         if(((int)(*chordNotes[selectedAlt][selectedZone][j]))==0) break;
         auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
         processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
@@ -564,59 +584,60 @@ void RibbonToNotesAudioProcessor::SelectProgression(const juce::MidiMessage &mid
 //==============================================================================
 // build a chord for each zone based on the key and the chord notes
 
-void RibbonToNotesAudioProcessor::BuildChordsForAllProgressions()
-{
-    for(int prog=0;prog<MAX_PROGRESSIONS;prog++)
-    {
-        BuildChords(prog);
-    }
-}
-
-void RibbonToNotesAudioProcessor::BuildChords(int progression)
-{
-    int maxNote = 0;
-    int key = 0;
-    int octave = (int) *octaves;
-    int addOctaves=0;
-    
-    for(int zone=0 ; zone < MAX_ZONES; zone++)
-    {
-        key = (int) *selectedKeys[progression][zone];
-        
-        //pitchMode 0 = up
-        if(*pitchMode == 0)
-        {
-            //if the notevalue is lower then the highest note, just add an octave to it.
-            if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
-            {
-                addOctaves++;
-            }
-            maxNote = key;
-        }
-        GetNoteNumbersForChord(octave + addOctaves, progression, zone, key);
-    }
-}
-
-// calculate the notes to be played for a specific zone
-// since key equals to one instead of zero, the counting is a bit strange
-void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int key)
-{
-    for(int j=0;j<MAX_NOTES;j++)
-    {
-        int note = (int) *chordNotes[alternative][zone][j];
-        if(note == 0)
-        {
-            notesToPlay[alternative][zone][j] = note;
-        }
-        else
-        {
-            if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
-            int keynote = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
-            if(keynote + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
-            notesToPlay[alternative][zone][j]= (keynote + note + addOctaves * 12);
-        }
-    }
-}
+//void RibbonToNotesAudioProcessor::BuildChordsForAllProgressions()
+//{
+//    for(int prog=0;prog<MAX_PROGRESSIONS;prog++)
+//    {
+//        BuildChords(prog);
+//    }
+//}
+//
+//void RibbonToNotesAudioProcessor::BuildChords(int progression)
+//{
+//    int maxNote = 0;
+//    int key = 0;
+//    int octave = (int) *octaves;
+//    int addOctaves=0;
+//    
+//    for(int zone=0 ; zone < MAX_ZONES; zone++)
+//    {
+//        key = (int) *selectedKeys[progression][zone];
+//        
+//        //pitchMode 0 = up
+//        if(*pitchMode == 0)
+//        {
+//            //if the notevalue is lower then the highest note, just add an octave to it.
+//            if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
+//            {
+//                addOctaves++;
+//            }
+//            maxNote = key;
+//        }
+//        GetNoteNumbersForChord(octave + addOctaves, progression, zone, key);
+//    }
+//}
+//
+//// calculate the notes to be played for a specific zone
+//// since key equals to one instead of zero, the counting is a bit strange
+//void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int key)
+//{
+//    for(int j=0;j<MAX_NOTES;j++)
+//    {
+//        int note = (int) *chordNotes[alternative][zone][j];
+//        if(note == 0)
+//        {
+//            *notesToPlay[alternative][zone][j] = note;
+//            
+//        }
+//        else
+//        {
+//            if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
+//            int keynote = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
+//            if(keynote + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
+//            *notesToPlay[alternative][zone][j]= (keynote + note + addOctaves * 12);
+//        }
+//    }
+//}
 // determine if the cc value has changed to another zone
 bool RibbonToNotesAudioProcessor::HasChanged(int ccval)
 {

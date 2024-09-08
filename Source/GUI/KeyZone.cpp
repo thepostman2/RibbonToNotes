@@ -28,6 +28,7 @@ KeyZone::~KeyZone()
     for(int j=0;j<MAX_NOTES;j++)
     {
         sldChordNotesHelpAttachment[j]=nullptr;
+        sldNotesToPlayHelpAttachment[j]=nullptr;
     }
 }
 
@@ -70,6 +71,11 @@ void KeyZone::CreateGui()
         sldChordNotesHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
         sldChordNotesHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldChordNotesHelp[j]);
         sldChordNotesHelp[j].setValue(*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j], juce::sendNotificationSync);
+
+        addAndMakeVisible(sldNotesToPlayHelp[j]);
+        sldNotesToPlayHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
+        sldNotesToPlayHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, NOTESTOPLAY_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldNotesToPlayHelp[j]);
+        sldNotesToPlayHelp[j].setValue((int)*audioProcessor.notesToPlay[PROGRESSION_ID][ZONE_ID][j], juce::sendNotificationSync);
     }
 }
 
@@ -80,10 +86,12 @@ void KeyZone::AddListeners()
     for(int j=0;j<MAX_NOTES;j++)
     {
         sldChordNotesHelp[j].addListener(this);
+        sldNotesToPlayHelp[j].addListener(this);
     }
     edtChordBuilder.onTextChange = [this] {EdtChordBuilderOnChange();};
     //cmbChord.onChange = [this] {cmbChordBuilderOnChange();};
 }
+
 void KeyZone::RemoveListeners()
 {
     cmbKey.removeListener(this);
@@ -91,9 +99,9 @@ void KeyZone::RemoveListeners()
     for(int j=0;j<MAX_NOTES;j++)
     {
         sldChordNotesHelp[j].removeListener(this);
+        sldNotesToPlayHelp[j].removeListener(this);
     }
     edtChordBuilder.onTextChange = nullptr;
-    //cmbChord.onChange = nullptr;
 }
 void KeyZone::resized()
 {
@@ -163,7 +171,7 @@ void KeyZone::cmbChordBuilderOnChange()
             edtChordChanged=false;
         }
     }
-    audioProcessor.BuildChords(PROGRESSION_ID);
+    BuildChords();
 }
 
 void KeyZone::EdtChordBuilderOnChange()
@@ -171,7 +179,7 @@ void KeyZone::EdtChordBuilderOnChange()
     edtChordChanged = true;
     *audioProcessor.selectedChord[PROGRESSION_ID][ZONE_ID] = chordbuildsArray.size();//set selectedChord to "Custom"
     GetChordFromChordString();
-    audioProcessor.BuildChords(PROGRESSION_ID);
+    BuildChords();
     cmbChord.setSelectedId(chordbuildsArray.size(), juce::sendNotificationSync);//set cmbChord to "Custom"
 }
 
@@ -199,6 +207,10 @@ void KeyZone::SetChordParameter(int j, float value)
 {
     sldChordNotesHelp[j].setValue(value, juce::sendNotificationSync);
 }
+void KeyZone::SetNoteParameter(int j, float value)
+{
+    sldNotesToPlayHelp[j].setValue(value, juce::sendNotificationSync);
+}
 
 bool KeyZone::is_validnotenumber(const juce::String& str)
 {
@@ -213,7 +225,13 @@ bool KeyZone::is_validnotenumber(const juce::String& str)
     }
     return isvalid;
 }
-
+void KeyZone::BuildChords()
+{
+    if(ribbonToNotesAudioProcessorEditor != NULL && BuildChordsFuncP != NULL)
+    {
+        BuildChordsFuncP(ribbonToNotesAudioProcessorEditor, PROGRESSION_ID);
+    }
+}
 int KeyZone::Transposed()
 {
     return currentKey-prevKey;
@@ -231,7 +249,7 @@ void KeyZone::comboBoxChanged(juce::ComboBox* combobox)
     {
         prevKey = currentKey;
         currentKey = cmbKey.getSelectedId();
-        audioProcessor.BuildChords(PROGRESSION_ID);
+        BuildChords();
         return;
     }
     if(combobox == &cmbChord)

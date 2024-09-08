@@ -64,6 +64,21 @@ private:
     void buttonClicked(juce::Button* button) override;
     
     //==============================================================================
+    // build notes to play
+    //==============================================================================
+    void BuildChordsForAllProgressions();
+public:
+    void BuildChords(int alternative);
+    static void BuildChordsWrapper(void* audioProcessorEditor, int progression)
+    {
+        if(audioProcessorEditor != NULL)
+        {
+            static_cast<RibbonToNotesAudioProcessorEditor*>(audioProcessorEditor)->BuildChords(progression);
+        }
+    }
+private:
+    void GetNoteNumbersForChord(int addOctaves, int progression, int zone, int note);
+    //==============================================================================
     // Update functions for the visuals
     //==============================================================================
     void ShowActiveAlternative();
@@ -105,7 +120,6 @@ private:
     juce::Label lblSplitValues[MAX_SPLITS];
 
     // utility variables
-    juce::Slider sldChordNotesHelp[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];//this is not visible, but helps to load selected notes from preset.
     int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
     int rootKey[MAX_PROGRESSIONS];
@@ -124,8 +138,5 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbPitchModesAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbActiveProgressionAttachment;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldChordNotesHelpAttachment[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
-
-    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RibbonToNotesAudioProcessorEditor)
 };
