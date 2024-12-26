@@ -17,7 +17,10 @@ public:
                          [[maybe_unused]] bool shouldDrawButtonAsHighlighted, [[maybe_unused]] bool shouldDrawButtonAsDown)
     {
         using namespace juce;
-        Font font (button.getHeight () * 0.6f);
+        auto text = button.getButtonText ();
+        MyButtonText = text.length() > 0 ? text : MyButtonText; //get current text
+        button.setButtonText(""); //remove text from button
+        Font  font (button.getHeight () * 0.6f);
         g.setFont (font);
         g.setColour (button.findColour (button.getToggleState () ?
             TextButton::textColourOnId    : TextButton::textColourOffId)
@@ -33,8 +36,12 @@ public:
         const int textWidth = button.getWidth () - leftIndent - rightIndent;
 
         if (textWidth > 0)
-            g.drawFittedText (button.getButtonText (),
+            g.drawFittedText (MyButtonText,
                 leftIndent, yIndent, textWidth, button.getHeight () - yIndent * 2,
                 Justification::centred, 2, 0.5f);
     }
+        
+private:
+    juce::String MyButtonText = "";
+
 };
