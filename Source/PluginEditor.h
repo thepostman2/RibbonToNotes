@@ -40,7 +40,7 @@ private:
     // init functions
     //==============================================================================
     void CreateRibbon();
-    void CreateAltKnobs();
+    void CreateProgressionSelectorKnobs();
     void CreateGui();
     void AddListeners();
     void RemoveListeners();

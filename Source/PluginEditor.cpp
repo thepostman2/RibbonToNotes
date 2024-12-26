@@ -21,7 +21,7 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    CreateAltKnobs();
+    CreateProgressionSelectorKnobs();
     CreateRibbon();
     CreateGui();
     setSize (800, 400);
@@ -73,7 +73,7 @@ void RibbonToNotesAudioProcessorEditor::CreateRibbon()
 }
 
 // initialize alternative selection knobs
-void RibbonToNotesAudioProcessorEditor::CreateAltKnobs()
+void RibbonToNotesAudioProcessorEditor::CreateProgressionSelectorKnobs()
 {
     for(int alt = 0;alt < MAX_PROGRESSIONS;alt++)
     {
