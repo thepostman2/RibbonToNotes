@@ -117,6 +117,11 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblOctave.attachToComponent(&sldOctave, false);
     lblOctave.setJustificationType(juce::Justification::centred);
 
+    addAndMakeVisible(toggleShowMidiLearnSettings);
+    lblShowMidiLearnSettings.setText(TOGGLEMIDI_NAME, juce::dontSendNotification);
+    lblShowMidiLearnSettings.attachToComponent(&toggleShowMidiLearnSettings, true);
+    lblShowMidiLearnSettings.setJustificationType(juce::Justification::left);
+
     addAndMakeVisible(cmbChannelIn);
     cmbChannelIn.addItemList(channelInArray, 1);
     cmbChannelInAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, CHANNELIN_ID, cmbChannelIn);
@@ -249,6 +254,9 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     sldNumberOfZones.addListener (this);
     sldVelocity.addListener(this);
     sldOctave.addListener(this);
+
+    toggleShowMidiLearnSettings.addListener(this);
+    
     cmbChannelIn.addListener(this);
     cmbChannelOut.addListener(this);
     cmbPitchModes.addListener(this);
@@ -287,6 +295,9 @@ void RibbonToNotesAudioProcessorEditor::RemoveListeners()
     sldNumberOfZones.removeListener (this);
     sldVelocity.removeListener(this);
     sldOctave.removeListener(this);
+    
+    toggleShowMidiLearnSettings.removeListener(this);
+    
     cmbChannelIn.removeListener(this);
     cmbChannelOut.removeListener(this);
     cmbPitchModes.removeListener(this);
@@ -371,10 +382,13 @@ void RibbonToNotesAudioProcessorEditor::resized()
     sldVelocity.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
     sldOctave.setBounds(sideMargin + 3*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
     sldOctave.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
-    cmbChannelIn.setBounds(rightX - controlWidth, topGeneralControls , controlWidth,  textHeight);
-    cmbChannelOut.setBounds(rightX - controlWidth, topGeneralControls + (textHeight + topMargin), controlWidth,  textHeight);
-    cmbPitchModes.setBounds(rightX - controlWidth, topGeneralControls + 2* (textHeight + topMargin), controlWidth, textHeight);
-    cmbActiveProgression.setBounds(rightX - controlWidth, topGeneralControls + 3* (textHeight + topMargin), controlWidth, textHeight);
+    
+    toggleShowMidiLearnSettings.setBounds(rightX - controlWidth, topGeneralControls , controlWidth,  textHeight);
+    
+    cmbChannelIn.setBounds(rightX - controlWidth, topGeneralControls + 1* (textHeight + topMargin), controlWidth,  textHeight);
+    cmbChannelOut.setBounds(rightX - controlWidth, topGeneralControls + 2* (textHeight + topMargin), controlWidth,  textHeight);
+    cmbPitchModes.setBounds(rightX - controlWidth, topGeneralControls + 3* (textHeight + topMargin), controlWidth, textHeight);
+    cmbActiveProgression.setBounds(rightX - controlWidth, topGeneralControls + 4* (textHeight + topMargin), controlWidth, textHeight);
 
     ribbonZeroZone.setBounds(zoneX + sideMargin, topZone, firstZoneWidth, zoneHeight);//0.5*zoneWidth); //Somehow making it smaller gives problems with the rendering.
     
@@ -602,6 +616,10 @@ void RibbonToNotesAudioProcessorEditor::buttonClicked(juce::Button* button)
         audioProcessor.activeProgressionKnob = MAX_PROGRESSIONS+1;
         return;
     }
+    if(button == &toggleShowMidiLearnSettings)
+    {
+        MidiLearnInterface::MidiSettingOn = button->getToggleState();
+    }
 
     //check if one of the progression selection knobs is pressed
     if(auto castProgressionKnob = dynamic_cast<SelectionKnob*>(button))
@@ -630,6 +648,7 @@ void RibbonToNotesAudioProcessorEditor::buttonClicked(juce::Button* button)
     }
     
 }
+
 //==============================================================================
 // build notes to play
 //==============================================================================

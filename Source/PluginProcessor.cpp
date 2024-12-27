@@ -351,15 +351,18 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     {
         const auto message = metadata.getMessage();
         //auto time = metadata.samplePosition;
-        if(message.isController() && message.getControllerNumber() == (int) *midiCC)
+        if(MidiLearnInterface::MidiSettingOn == false)
         {
-            ccval = message.getControllerValue();
-            channel = message.getChannel();
-        }
-        else
-        {
-            SelectProgression(message);
-            notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+            if(message.isController() && message.getControllerNumber() == (int) *midiCC)
+            {
+                ccval = message.getControllerValue();
+                channel = message.getChannel();
+            }
+            else
+            {
+                SelectProgression(message);
+                notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+            }
         }
     }
     midiMessages.clear();

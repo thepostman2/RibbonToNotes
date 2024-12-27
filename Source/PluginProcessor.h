@@ -26,6 +26,9 @@
 #define VELOCITY_NAME "Velocity"
 #define OCTAVES_ID "octaves"
 #define OCTAVES_NAME "Octaves"
+
+#define TOGGLEMIDI_NAME "Show midi controls"
+
 #define CHANNELIN_ID "channelin"
 #define CHANNELIN_NAME "Channel in"
 #define CHANNELOUT_ID "channelout"

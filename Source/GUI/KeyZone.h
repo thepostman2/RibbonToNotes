@@ -16,7 +16,7 @@
 //==============================================================================
 class KeyZone : public ZoneVisual,
 private juce::Slider::Listener,
-private juce::ComboBox::Listener
+private juce::ComboBox::Listener 
 {
 public:
     KeyZone (RibbonToNotesAudioProcessor&, int alternativeid, int zoneid);

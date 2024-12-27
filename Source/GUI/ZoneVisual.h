@@ -24,26 +24,38 @@ public:
         PROGRESSION_ID = progressionid;
         setPaintingIsUnclipped(true);
     }
-    bool FillColourOn;
+    bool FillColourOn = false;
     int ZONE_ID;
     int PROGRESSION_ID;
     juce::Colour ColourOn = juce::Colours::red;
     juce::Colour ColourOff = juce::Colours::black;
+    float alpha = 0.5;
+    
+    void PaintZoneVisual(juce::Graphics& g)
+    {
+        TextButton::paint(g);
+        bigTextLookAndFeel.drawButtonText(g, *this, false, false);
+        TextButton::setColour(juce::TextButton::buttonColourId, GetKnobColour());
+    }
+
+    virtual juce::Colour GetKnobColour()
+    {
+        return KnobColour();
+    }
+
+    juce::Colour KnobColour()
+    {
+        return FillColourOn ? ColourOn.withAlpha(alpha) : ColourOff.withAlpha(alpha);
+    }
 
 private:
     LookAndFeelZoneButton bigTextLookAndFeel;
 
     void paint (juce::Graphics& g) override
     {
-        TextButton::paint(g);
-        bigTextLookAndFeel.drawButtonText(g, *this, false, false);
-        if(FillColourOn)
-        {
-            TextButton::setColour(juce::TextButton::buttonColourId, ColourOn);
-        }
-        else
-        {
-            TextButton::setColour(juce::TextButton::buttonColourId,ColourOff);
-        }
+        PaintZoneVisual(g);
     }
+    
+    
 };
+

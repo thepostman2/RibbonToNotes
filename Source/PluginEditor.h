@@ -101,6 +101,10 @@ private:
     juce::Label lblVelocity;
     juce::Slider sldOctave;
     juce::Label lblOctave;
+
+    juce::ToggleButton toggleShowMidiLearnSettings;
+    juce::Label lblShowMidiLearnSettings;
+
     juce::ComboBox cmbChannelIn;
     juce::Label lblChannelIn;
     juce::ComboBox cmbChannelOut;
@@ -109,7 +113,7 @@ private:
     juce::Label lblPitchModes;
     juce::ComboBox cmbActiveProgression;
     juce::Label lblActiveProgression;
-
+    
     ZoneVisual ribbonZeroZone;
     juce::OwnedArray<KeyZone> ribbonKeyZone[MAX_PROGRESSIONS];
     juce::OwnedArray<SelectionKnob> selectProgressionKnobs;

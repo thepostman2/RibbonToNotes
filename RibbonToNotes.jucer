@@ -12,6 +12,12 @@
         <FILE id="GH7Vxo" name="PresetManager.h" compile="0" resource="0" file="Source/Service/PresetManager.h"/>
       </GROUP>
       <GROUP id="{9A127437-252B-99AB-A46A-6947BBCD0E0F}" name="GUI">
+        <FILE id="vEXFgi" name="ZoneVisualMidiLearn.h" compile="0" resource="0"
+              file="Source/GUI/ZoneVisualMidiLearn.h"/>
+        <FILE id="hc2cGz" name="MidiLearnInterface.cpp" compile="1" resource="0"
+              file="Source/GUI/MidiLearnInterface.cpp"/>
+        <FILE id="JkL3UU" name="MidiLearnInterface.h" compile="0" resource="0"
+              file="Source/GUI/MidiLearnInterface.h"/>
         <FILE id="chw1hm" name="LookAndFeelZoneButton.h" compile="0" resource="0"
               file="Source/GUI/LookAndFeelZoneButton.h"/>
         <FILE id="DUbICp" name="ZoneVisual.h" compile="0" resource="0" file="Source/GUI/ZoneVisual.h"/>
