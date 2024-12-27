@@ -15,7 +15,11 @@
 void MidiLearnInterface::CreateGui()
 {
     auto alpha = 1;
-        
+    
+    parent->addAndMakeVisible(selectButton);
+    selectButton.setEnabled(true);
+    selectButton.setAlpha(alpha);
+
     parent->addAndMakeVisible(cmbMidiInMessage);
     cmbMidiInMessage.addItemList(midiMessageTypeArray, 1);
     cmbMidiInMessage.setEnabled(true);
@@ -39,6 +43,7 @@ void MidiLearnInterface::CreateGui()
 
 void MidiLearnInterface::AddMidiInterfaceListeners()
 {
+    selectButton.addListener(this);
     cmbMidiInMessage.addListener(this);
     cmbMidiInChannel.addListener(this);
     cmbMidiInNumber.addListener(this);
@@ -46,6 +51,7 @@ void MidiLearnInterface::AddMidiInterfaceListeners()
 }
 void MidiLearnInterface::RemoveMidiInterfaceListeners()
 {
+    selectButton.removeListener(this);
     cmbMidiInMessage.removeListener(this);
     cmbMidiInChannel.removeListener(this);
     cmbMidiInNumber.removeListener(this);
@@ -69,11 +75,15 @@ void MidiLearnInterface::ResizeControls()
     int topRowC = topRowB + topMargin + textHeight;
     int topRowD = topRowC + topMargin + textHeight;
     int topRowE = topRowD + topMargin + textHeight;
+    
+    selectButton.setEnabled(true);
 
     cmbMidiInMessage.setEnabled(true);
     cmbMidiInChannel.setEnabled(true);
     cmbMidiInNumber.setEnabled(true);
     cmbMidiInValue.setEnabled(true);
+    
+    selectButton.setBounds(0, 0, width, height);
     
     cmbMidiInMessage.setBounds(sideMargin, topRowB, controlWidth, textHeight);
     cmbMidiInChannel.setBounds(sideMargin, topRowC, controlWidth, textHeight);
@@ -85,6 +95,9 @@ void MidiLearnInterface::ResizeControls()
 
 void MidiLearnInterface::ShowMidiSettings()
 {
+    selectButton.setColour(juce::TextButton::buttonColourId, GetMidiActiveColour(ColourOff));
+
+    selectButton.setVisible(MidiSettingOn);
     cmbMidiInMessage.setVisible(MidiSettingOn);
     cmbMidiInChannel.setVisible(MidiSettingOn);
     cmbMidiInNumber.setVisible(MidiSettingOn);

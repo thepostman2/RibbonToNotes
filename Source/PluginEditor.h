@@ -14,7 +14,7 @@
 #include "GUI/KeyZone.h"
 #include "GUI/SelectionKnob.h"
 #include "Service/PresetManager.h"
-#include "MidiLearn/MidiLearnObject.h"
+#include "GUI/SliderMidiLearn.h"
 
 //==============================================================================
 class RibbonToNotesAudioProcessorEditor  : public juce::AudioProcessorEditor,
@@ -83,6 +83,7 @@ private:
     //==============================================================================
     void ShowActiveAlternative();
     void ShowRibbonZone(int area);
+    void UpdateMidiLearnControls();
 
     //==============================================================================
     // Properties
@@ -97,7 +98,7 @@ private:
     juce::Label lblMidiCC;
     juce::Slider sldNumberOfZones;
     juce::Label lblNumberOfZones;
-    juce::Slider sldVelocity;
+    SliderMidiLearn sldVelocity;
     juce::Label lblVelocity;
     juce::Slider sldOctave;
     juce::Label lblOctave;

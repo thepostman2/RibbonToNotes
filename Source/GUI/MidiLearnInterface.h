@@ -69,10 +69,10 @@ public:
         ShowMidiSettings();
     }
 
-    juce::Colour GetMidiActiveColour()
+    juce::Colour GetMidiActiveColour(juce::Colour colourNormal)
     {
         auto alpha = MidiLearnOn ? alphaMidiLearnOn : alphaMidiLearnOff;
-        return MidiSettingOn ? (MidiLearnNew() ? ColourMidiNotSet.withAlpha(alpha) : ColourMidiSet.withAlpha(alpha)) : ColourOff.withAlpha(0.0f);
+        return MidiSettingOn ? (MidiLearnNew() ? ColourMidiNotSet.withAlpha(alpha) : ColourMidiSet.withAlpha(alpha)) : colourNormal;
     }
 
     void ShowMidiSettings();
@@ -80,5 +80,6 @@ public:
     
 private:
     juce::Component* parent;
+    juce::TextButton selectButton;
 };
 

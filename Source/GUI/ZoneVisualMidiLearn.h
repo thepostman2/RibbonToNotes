@@ -25,12 +25,10 @@ public:
 
     juce::Colour GetKnobColour()override
     {
-        return MidiLearnInterface::MidiSettingOn ? GetMidiActiveColour() :  KnobColour();
+        return GetMidiActiveColour(KnobColour());
     }
 
 private:
-    LookAndFeelZoneButton bigTextLookAndFeel;
-
     void paint (juce::Graphics& g) override
     {
         ZoneVisual::PaintZoneVisual(g);

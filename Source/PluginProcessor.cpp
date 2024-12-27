@@ -153,6 +153,29 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                    127,
                                                                    1));
     }
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMESSAGETYPE_ID, VELOCITY_ID),versionHint1},
+                                                               MIDIINMESSAGETYPE_NAME,
+                                                               0,
+                                                               2,
+                                                               0));
+
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINCHANNEL_ID, VELOCITY_ID),versionHint1},
+                                                               MIDIINCHANNEL_NAME,
+                                                               0,
+                                                               16,
+                                                               0));
+
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINNUMBER_ID, VELOCITY_ID),versionHint1},
+                                                               MIDIINNUMBER_NAME,
+                                                               0,
+                                                               127,
+                                                               11));
+
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINVALUE_ID, VELOCITY_ID),versionHint1},
+                                                               MIDIINVALUE_NAME,
+                                                               0,
+                                                               127,
+                                                               0));  
     return {params.begin(), params.end()};
 }
 //==============================================================================
@@ -214,7 +237,12 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
         midiInProgressionNumber[prog] = apvts.getRawParameterValue(MIDIINSKALTNUMBER_ID + std::to_string(prog));
         midiInProgressionValueTreshold[prog] = apvts.getRawParameterValue(MIDIINSKALTVALUE_ID + std::to_string(prog));
     }
-    
+
+    midiInVelocityMessageType = apvts.getRawParameterValue(DEFCONCAT(MIDIINMESSAGETYPE_ID, VELOCITY_ID));
+    midiInVelocityChannel = apvts.getRawParameterValue(DEFCONCAT(MIDIINCHANNEL_ID, VELOCITY_ID));
+    midiInVelocityNumber = apvts.getRawParameterValue(DEFCONCAT(MIDIINNUMBER_ID, VELOCITY_ID));
+    midiInVelocityValueTreshold = apvts.getRawParameterValue(DEFCONCAT(MIDIINVALUE_ID, VELOCITY_ID));
+
     
     presetManager = std::make_unique<Service::PresetManager>(apvts);
 }
@@ -360,7 +388,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
             }
             else
             {
-                SelectProgression(message);
+                SetControlByMidi(message);
                 notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
             }
         }
@@ -561,7 +589,7 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
 //==============================================================================
 // Select progression
 //==============================================================================
-void RibbonToNotesAudioProcessor::SelectProgression(const juce::MidiMessage &midiMessage)
+void RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midiMessage)
 {
     auto messageType = midiMessage.isController() ? 1 : midiMessage.isNoteOn() ? 2 : 0;
     if(messageType == 0) return;
@@ -570,6 +598,15 @@ void RibbonToNotesAudioProcessor::SelectProgression(const juce::MidiMessage &mid
     auto messageNumber = messageType == 1 ? midiMessage.getControllerNumber() : midiMessage.getNoteNumber();
     auto messageValue = messageType == 1 ? midiMessage.getControllerValue() : midiMessage.getVelocity();
 
+    if(messageType == (int) *midiInVelocityMessageType
+       && messageNumber == (int) *midiInVelocityNumber
+       && messageValue >= (int) *midiInVelocityValueTreshold
+       && ((int) *midiInVelocityChannel == 0 || messageChannel == (int) *midiInVelocityChannel))
+    {
+        *noteVelocity = messageValue / 127.0;
+    }
+
+    
     for(int i=0; i < MAX_PROGRESSIONSKNOBS;i++)
     {
         if(messageType == (int) *midiInProgressionMessageType[i]

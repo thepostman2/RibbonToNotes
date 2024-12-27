@@ -11,6 +11,8 @@
 #include <JuceHeader.h>
 #include "Service/PresetManager.h"
 
+#define DEFCONCAT(first, second) first second
+
 #define MAX_PROGRESSIONS 6
 #define MAX_PROGRESSIONSKNOBS MAX_PROGRESSIONS+2
 #define MAX_NOTES 12
@@ -47,6 +49,15 @@
 #define NOTESTOPLAY_NAME "Notes to play"
 #define SPLITS_ID "splits"
 #define SPLITS_NAME "Splits"
+
+#define MIDIINMESSAGETYPE_ID "midiInMessageType"
+#define MIDIINMESSAGETYPE_NAME "midiInMessageType"
+#define MIDIINCHANNEL_ID "midiInChannel"
+#define MIDIINCHANNEL_NAME "midiInChannel"
+#define MIDIINNUMBER_ID "midiInNumber"
+#define MIDIINNUMBER_NAME "midiInNumber"
+#define MIDIINVALUE_ID "midiInValue"
+#define MIDIINVALUE_NAME "midiInValue"
 
 #define MIDIINSKALTMESSAGETYPE_ID "midiInSKAltMessageType"
 #define MIDIINSKALTMESSAGETYPE_NAME "midiInSKAltMessageType"
@@ -144,7 +155,7 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     //==============================================================================
     // Select progression
     //==============================================================================
-    void SelectProgression(const juce::MidiMessage &midiMessage);
+    void SetControlByMidi(const juce::MidiMessage &midiMessage);
 
     void extracted(int &addOctaves, int alternative, int &key, int &maxNote, int octave, int zone);
     
@@ -176,6 +187,12 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     std::atomic<float>*  midiInProgressionChannel[MAX_PROGRESSIONSKNOBS];
     std::atomic<float>*  midiInProgressionNumber[MAX_PROGRESSIONSKNOBS];
     std::atomic<float>*  midiInProgressionValueTreshold[MAX_PROGRESSIONSKNOBS];
+    
+    std::atomic<float>*  midiInVelocityMessageType;
+    std::atomic<float>*  midiInVelocityChannel;
+    std::atomic<float>*  midiInVelocityNumber;
+    std::atomic<float>*  midiInVelocityValueTreshold;
+
     
     juce::Array<int> notesPressed;
     int notePressedChannel[MAX_ZONES];

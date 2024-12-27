@@ -12,21 +12,23 @@
         <FILE id="GH7Vxo" name="PresetManager.h" compile="0" resource="0" file="Source/Service/PresetManager.h"/>
       </GROUP>
       <GROUP id="{9A127437-252B-99AB-A46A-6947BBCD0E0F}" name="GUI">
-        <FILE id="vEXFgi" name="ZoneVisualMidiLearn.h" compile="0" resource="0"
-              file="Source/GUI/ZoneVisualMidiLearn.h"/>
+        <FILE id="uTdp7s" name="KeyZone.cpp" compile="1" resource="0" file="Source/GUI/KeyZone.cpp"/>
+        <FILE id="wr85Hq" name="KeyZone.h" compile="0" resource="0" file="Source/GUI/KeyZone.h"/>
+        <FILE id="chw1hm" name="LookAndFeelZoneButton.h" compile="0" resource="0"
+              file="Source/GUI/LookAndFeelZoneButton.h"/>
         <FILE id="hc2cGz" name="MidiLearnInterface.cpp" compile="1" resource="0"
               file="Source/GUI/MidiLearnInterface.cpp"/>
         <FILE id="JkL3UU" name="MidiLearnInterface.h" compile="0" resource="0"
               file="Source/GUI/MidiLearnInterface.h"/>
-        <FILE id="chw1hm" name="LookAndFeelZoneButton.h" compile="0" resource="0"
-              file="Source/GUI/LookAndFeelZoneButton.h"/>
-        <FILE id="DUbICp" name="ZoneVisual.h" compile="0" resource="0" file="Source/GUI/ZoneVisual.h"/>
+        <FILE id="sB4D4H" name="PresetPanel.h" compile="0" resource="0" file="Source/GUI/PresetPanel.h"/>
         <FILE id="frwQgA" name="SelectionKnob.cpp" compile="1" resource="0"
               file="Source/GUI/SelectionKnob.cpp"/>
         <FILE id="Pzf68L" name="SelectionKnob.h" compile="0" resource="0" file="Source/GUI/SelectionKnob.h"/>
-        <FILE id="sB4D4H" name="PresetPanel.h" compile="0" resource="0" file="Source/GUI/PresetPanel.h"/>
-        <FILE id="uTdp7s" name="KeyZone.cpp" compile="1" resource="0" file="Source/GUI/KeyZone.cpp"/>
-        <FILE id="wr85Hq" name="KeyZone.h" compile="0" resource="0" file="Source/GUI/KeyZone.h"/>
+        <FILE id="u2OCFe" name="SliderMidiLearn.h" compile="0" resource="0"
+              file="Source/GUI/SliderMidiLearn.h"/>
+        <FILE id="DUbICp" name="ZoneVisual.h" compile="0" resource="0" file="Source/GUI/ZoneVisual.h"/>
+        <FILE id="vEXFgi" name="ZoneVisualMidiLearn.h" compile="0" resource="0"
+              file="Source/GUI/ZoneVisualMidiLearn.h"/>
       </GROUP>
       <FILE id="IbJPvz" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>

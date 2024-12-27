@@ -15,6 +15,7 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
 : AudioProcessorEditor (&p)
 , audioProcessor (p)
 , presetPanel(p.getPresetManager())
+, sldVelocity(p, VELOCITY_ID)
 , ribbonZeroZone(0,0)
 , prevProgression(audioProcessor, MAX_PROGRESSIONS)
 , nextProgression(audioProcessor, MAX_PROGRESSIONS+1)
@@ -773,12 +774,19 @@ void RibbonToNotesAudioProcessorEditor::ShowRibbonZone(int area)
         ribbonKeyZone[activeAlternative][zone]->repaint();
     }
 }
+
+void RibbonToNotesAudioProcessorEditor::UpdateMidiLearnControls()
+{
+    sldVelocity.setValue(*audioProcessor.noteVelocity, juce::dontSendNotification);
+    sldVelocity.repaint();
+}
 //==============================================================================
 // Timer call back function. In this case only used to update the GUI when
 // the user has pressed somewhere on the ribbon.
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::timerCallback()
 {
+    UpdateMidiLearnControls();
     ShowRibbonZone(audioProcessor.getActiveZone());
     ShowActiveAlternative();
 }
