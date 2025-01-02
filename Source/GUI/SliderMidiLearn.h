@@ -24,6 +24,7 @@ public:
     {
         setPaintingIsUnclipped(true);
         CreateGui();
+        AddListeners();
     }
     ~SliderMidiLearn()
     {
@@ -34,13 +35,15 @@ public:
     {
         MidiLearnInterface::CreateGui();
 
-        cmbMidiMessageAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MidiInMessageType + MidiLearnID , cmbMidiInMessage);
+        cmbMidiMessageAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINMESSAGETYPE_ID + MidiLearnID , cmbMidiInMessage);
 
-        cmbMidiInChannelAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MidiInChannel + MidiLearnID , cmbMidiInChannel);
+        cmbMidiInChannelAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINCHANNEL_ID + MidiLearnID , cmbMidiInChannel);
 
-        cmbMidiInNumberAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MidiInNumber + MidiLearnID , cmbMidiInNumber);
+        cmbMidiInNumberAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINNUMBER_ID + MidiLearnID , cmbMidiInNumber);
 
-        cmbMidiInValueAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MidiInValue + MidiLearnID , cmbMidiInValue);
+        sldMidiInMinValueAttachment= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, MIDIINMINVALUE_ID + MidiLearnID , sldMidiInMinValue);
+
+        sldMidiInMaxValueAttachment= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, MIDIINMAXVALUE_ID + MidiLearnID , sldMidiInMaxValue);
     }
 
     void resized() override
@@ -57,14 +60,19 @@ public:
         MidiLearnInterface::RemoveMidiInterfaceListeners();
     }
 
+    //==============================================================================
+    // listeners
+    //==============================================================================
+    void buttonClicked(juce::Button* button) override
+    {
+        MidiLearnInterface::buttonClicked(button);
+        repaint();
+    }
+    
 
 private:
     RibbonToNotesAudioProcessor& audioProcessor;
     juce::String MidiLearnID;
-    juce::String MidiInMessageType = MIDIINMESSAGETYPE_ID;
-    juce::String MidiInChannel = MIDIINCHANNEL_ID;
-    juce::String MidiInNumber = MIDIINNUMBER_ID;
-    juce::String MidiInValue = MIDIINVALUE_ID;
 
     void paint (juce::Graphics& g) override
     {

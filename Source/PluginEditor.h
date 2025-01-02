@@ -15,6 +15,7 @@
 #include "GUI/SelectionKnob.h"
 #include "Service/PresetManager.h"
 #include "GUI/SliderMidiLearn.h"
+#include "GUI/MidiLearnGroup.h"
 
 //==============================================================================
 class RibbonToNotesAudioProcessorEditor  : public juce::AudioProcessorEditor,
@@ -105,6 +106,8 @@ private:
 
     juce::ToggleButton toggleShowMidiLearnSettings;
     juce::Label lblShowMidiLearnSettings;
+    juce::ToggleButton toggleMidiLearn;
+    juce::Label lblMidiLearn;
 
     juce::ComboBox cmbChannelIn;
     juce::Label lblChannelIn;
@@ -123,6 +126,8 @@ private:
 
     juce::Slider sldSplitValues[MAX_SPLITS];
     juce::Label lblSplitValues[MAX_SPLITS];
+    
+    MidiLearnGroup midiLearnGroup;
 
     // utility variables
     int lastNumberOfZones=6;

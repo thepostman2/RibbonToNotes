@@ -24,7 +24,7 @@ SelectionKnob::~SelectionKnob()
     cmbMidiMessageAttachment = nullptr;
     cmbMidiInChannelAttachment = nullptr;
     cmbMidiInNumberAttachment = nullptr;
-    cmbMidiInValueAttachment = nullptr;
+    sldMidiInMinValueAttachment = nullptr;
 }
 
 void SelectionKnob::CreateGui()
@@ -33,13 +33,15 @@ void SelectionKnob::CreateGui()
     
     setButtonText(progressionKnobs[PROGRESSION_ID]);
     
-    cmbMidiMessageAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINSKALTMESSAGETYPE_ID + std::to_string(PROGRESSION_ID) , cmbMidiInMessage);
+    cmbMidiMessageAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, DEFCONCAT(MIDIINMESSAGETYPE_ID, PROGRESSION) + std::to_string(PROGRESSION_ID) , cmbMidiInMessage);
 
-    cmbMidiInChannelAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINSKALTCHANNEL_ID + std::to_string(PROGRESSION_ID) , cmbMidiInChannel);
+    cmbMidiInChannelAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, DEFCONCAT(MIDIINCHANNEL_ID, PROGRESSION) + std::to_string(PROGRESSION_ID) , cmbMidiInChannel);
 
-    cmbMidiInNumberAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINSKALTNUMBER_ID + std::to_string(PROGRESSION_ID) , cmbMidiInNumber);
+    cmbMidiInNumberAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, DEFCONCAT(MIDIINNUMBER_ID, PROGRESSION) + std::to_string(PROGRESSION_ID) , cmbMidiInNumber);
 
-    cmbMidiInValueAttachment= std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.apvts, MIDIINSKALTVALUE_ID + std::to_string(PROGRESSION_ID) , cmbMidiInValue);
+    sldMidiInMinValueAttachment= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, DEFCONCAT(MIDIINMINVALUE_ID, PROGRESSION) + std::to_string(PROGRESSION_ID) , sldMidiInMinValue);
+
+    sldMidiInMaxValueAttachment= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, DEFCONCAT(MIDIINMAXVALUE_ID, PROGRESSION) + std::to_string(PROGRESSION_ID) , sldMidiInMaxValue);
 }
 void SelectionKnob::AddListeners()
 {
@@ -62,5 +64,6 @@ void SelectionKnob::resized()
 void SelectionKnob::buttonClicked(juce::Button* button)
 {
     FillColourOn = true;
+    MidiLearnInterface::buttonClicked(button);
     repaint();
 }

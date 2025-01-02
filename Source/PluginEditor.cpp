@@ -123,6 +123,11 @@ void RibbonToNotesAudioProcessorEditor::CreateGui()
     lblShowMidiLearnSettings.attachToComponent(&toggleShowMidiLearnSettings, true);
     lblShowMidiLearnSettings.setJustificationType(juce::Justification::left);
 
+    addAndMakeVisible(toggleMidiLearn);
+    lblMidiLearn.setText(TOGGLEMIDILEARN_NAME, juce::dontSendNotification);
+    lblMidiLearn.attachToComponent(&toggleMidiLearn, true);
+    lblMidiLearn.setJustificationType(juce::Justification::left);
+
     addAndMakeVisible(cmbChannelIn);
     cmbChannelIn.addItemList(channelInArray, 1);
     cmbChannelInAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, CHANNELIN_ID, cmbChannelIn);
@@ -254,6 +259,7 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     sldMidiCC.addListener(this);
     sldNumberOfZones.addListener (this);
     sldVelocity.addListener(this);
+    midiLearnGroup.Add(&sldVelocity);
     sldOctave.addListener(this);
 
     toggleShowMidiLearnSettings.addListener(this);
@@ -265,7 +271,9 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     
     ribbonZeroZone.addListener(this);
     prevProgression.addListener(this);
+    midiLearnGroup.Add(&prevProgression);
     nextProgression.addListener(this);
+    midiLearnGroup.Add(&nextProgression);
 
     for(int i=0;i<MAX_SPLITS;i++)
     {
@@ -274,6 +282,7 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     for(int alt=0;alt<MAX_PROGRESSIONS;alt++)
     {
         selectProgressionKnobs[alt]->addListener(this);
+        midiLearnGroup.Add(selectProgressionKnobs[alt]);
         for(int zone=0;zone<MAX_ZONES;zone++)
         {
             ribbonKeyZone[alt][zone]->addListener(this);
@@ -375,21 +384,37 @@ void RibbonToNotesAudioProcessorEditor::resized()
 
     presetPanel.setBounds(getLocalBounds().removeFromTop(proportionOfHeight(0.1f)));
     
-    sldMidiCC.setBounds(sideMargin, topGeneralControls, controlWidth, dialHeight);
+    int col = 0;
+    sldMidiCC.setBounds(sideMargin + col*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
     sldMidiCC.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
-    sldNumberOfZones.setBounds(sideMargin + 1*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
+
+    col++;
+    sldNumberOfZones.setBounds(sideMargin + col*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
     sldNumberOfZones.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
-    sldVelocity.setBounds(sideMargin + 2*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
+
+    col++;
+    sldVelocity.setBounds(sideMargin + col*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
     sldVelocity.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
-    sldOctave.setBounds(sideMargin + 3*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
+
+    col++;
+    sldOctave.setBounds(sideMargin + col*(sideMargin + controlWidth), topGeneralControls, controlWidth, dialHeight);
     sldOctave.setTextBoxStyle(juce::Slider::TextBoxBelow, false, controlWidth, textHeight);
     
-    toggleShowMidiLearnSettings.setBounds(rightX - controlWidth, topGeneralControls , controlWidth,  textHeight);
     
-    cmbChannelIn.setBounds(rightX - controlWidth, topGeneralControls + 1* (textHeight + topMargin), controlWidth,  textHeight);
-    cmbChannelOut.setBounds(rightX - controlWidth, topGeneralControls + 2* (textHeight + topMargin), controlWidth,  textHeight);
-    cmbPitchModes.setBounds(rightX - controlWidth, topGeneralControls + 3* (textHeight + topMargin), controlWidth, textHeight);
-    cmbActiveProgression.setBounds(rightX - controlWidth, topGeneralControls + 4* (textHeight + topMargin), controlWidth, textHeight);
+    int row = 0;
+    toggleShowMidiLearnSettings.setBounds(rightX - controlWidth, topGeneralControls - textHeight + row* (textHeight + topMargin), controlWidth,  textHeight);
+    row++;
+    toggleMidiLearn.setBounds(rightX - controlWidth, topGeneralControls - textHeight + row* (textHeight + topMargin), controlWidth,  textHeight);
+
+    row++;
+    cmbChannelIn.setBounds(rightX - controlWidth, topGeneralControls - textHeight + row* (textHeight + topMargin), controlWidth,  textHeight);
+    row++;
+    cmbChannelOut.setBounds(rightX - controlWidth, topGeneralControls - textHeight + row* (textHeight + topMargin), controlWidth,  textHeight);
+    row++;
+    cmbPitchModes.setBounds(rightX - controlWidth, topGeneralControls - textHeight + row* (textHeight + topMargin), controlWidth, textHeight);
+    row++;
+    cmbActiveProgression.setBounds(rightX - controlWidth, topGeneralControls - textHeight + row* (textHeight + topMargin), controlWidth, textHeight);
+    row++;
 
     ribbonZeroZone.setBounds(zoneX + sideMargin, topZone, firstZoneWidth, zoneHeight);//0.5*zoneWidth); //Somehow making it smaller gives problems with the rendering.
     

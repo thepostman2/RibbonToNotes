@@ -129,29 +129,35 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                 }
             }
         }
-        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTMESSAGETYPE_ID + std::to_string(prog),versionHint1},
-                                                                   MIDIINSKALTMESSAGETYPE_NAME,
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMESSAGETYPE_ID, PROGRESSION) + std::to_string(prog),versionHint1},
+                                                                   MIDIINMESSAGETYPE_NAME,
                                                                    0,
                                                                    2,
                                                                    2));
 
-        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTCHANNEL_ID + std::to_string(prog),versionHint1},
-                                                                   MIDIINSKALTCHANNEL_NAME,
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINCHANNEL_ID, PROGRESSION) + std::to_string(prog),versionHint1},
+                                                                   MIDIINCHANNEL_NAME,
                                                                    0,
                                                                    16,
                                                                    0));
 
-        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTNUMBER_ID + std::to_string(prog),versionHint1},
-                                                                   MIDIINSKALTNUMBER_NAME,
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINNUMBER_ID, PROGRESSION) + std::to_string(prog),versionHint1},
+                                                                   MIDIINNUMBER_NAME,
                                                                    0,
                                                                    127,
                                                                    24+prog));
 
-        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{MIDIINSKALTVALUE_ID + std::to_string(prog),versionHint1},
-                                                                   MIDIINSKALTVALUE_NAME,
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMINVALUE_ID, PROGRESSION) + std::to_string(prog),versionHint1},
+                                                                   MIDIINMINVALUE_NAME,
                                                                    0,
                                                                    127,
                                                                    1));
+
+        params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMAXVALUE_ID, PROGRESSION) + std::to_string(prog),versionHint1},
+                                                                   MIDIINMAXVALUE_NAME,
+                                                                   0,
+                                                                   127,
+                                                                   127));
     }
     params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMESSAGETYPE_ID, VELOCITY_ID),versionHint1},
                                                                MIDIINMESSAGETYPE_NAME,
@@ -171,11 +177,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                127,
                                                                11));
 
-    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINVALUE_ID, VELOCITY_ID),versionHint1},
-                                                               MIDIINVALUE_NAME,
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMINVALUE_ID, VELOCITY_ID),versionHint1},
+                                                               MIDIINMINVALUE_NAME,
                                                                0,
                                                                127,
                                                                0));  
+    params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{DEFCONCAT(MIDIINMAXVALUE_ID, VELOCITY_ID),versionHint1},
+                                                               MIDIINMAXVALUE_NAME,
+                                                               0,
+                                                               127,
+                                                               127));
     return {params.begin(), params.end()};
 }
 //==============================================================================
@@ -232,16 +243,18 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
                 notePressedChannel[i]=-1;
             }
         }
-        midiInProgressionMessageType[prog] = apvts.getRawParameterValue(MIDIINSKALTMESSAGETYPE_ID + std::to_string(prog));
-        midiInProgressionChannel[prog] = apvts.getRawParameterValue(MIDIINSKALTCHANNEL_ID + std::to_string(prog));
-        midiInProgressionNumber[prog] = apvts.getRawParameterValue(MIDIINSKALTNUMBER_ID + std::to_string(prog));
-        midiInProgressionValueTreshold[prog] = apvts.getRawParameterValue(MIDIINSKALTVALUE_ID + std::to_string(prog));
+        midiInProgression[prog].MessageType = apvts.getRawParameterValue(DEFCONCAT(MIDIINMESSAGETYPE_ID, PROGRESSION) + std::to_string(prog));
+        midiInProgression[prog].Channel = apvts.getRawParameterValue(DEFCONCAT(MIDIINCHANNEL_ID, PROGRESSION) + std::to_string(prog));
+        midiInProgression[prog].Number = apvts.getRawParameterValue(DEFCONCAT(MIDIINNUMBER_ID, PROGRESSION) + std::to_string(prog));
+        midiInProgression[prog].MinValue = apvts.getRawParameterValue(DEFCONCAT(MIDIINMINVALUE_ID, PROGRESSION) + std::to_string(prog));
+        midiInProgression[prog].MaxValue = apvts.getRawParameterValue(DEFCONCAT(MIDIINMAXVALUE_ID, PROGRESSION) + std::to_string(prog));
     }
-
-    midiInVelocityMessageType = apvts.getRawParameterValue(DEFCONCAT(MIDIINMESSAGETYPE_ID, VELOCITY_ID));
-    midiInVelocityChannel = apvts.getRawParameterValue(DEFCONCAT(MIDIINCHANNEL_ID, VELOCITY_ID));
-    midiInVelocityNumber = apvts.getRawParameterValue(DEFCONCAT(MIDIINNUMBER_ID, VELOCITY_ID));
-    midiInVelocityValueTreshold = apvts.getRawParameterValue(DEFCONCAT(MIDIINVALUE_ID, VELOCITY_ID));
+    midiInVelocity.MidiInfoID = DEFCONCAT(MIDIINMESSAGETYPE_ID, VELOCITY_ID);
+    midiInVelocity.MessageType = apvts.getRawParameterValue(DEFCONCAT(MIDIINMESSAGETYPE_ID, VELOCITY_ID));
+    midiInVelocity.Channel = apvts.getRawParameterValue(DEFCONCAT(MIDIINCHANNEL_ID, VELOCITY_ID));
+    midiInVelocity.Number = apvts.getRawParameterValue(DEFCONCAT(MIDIINNUMBER_ID, VELOCITY_ID));
+    midiInVelocity.MinValue = apvts.getRawParameterValue(DEFCONCAT(MIDIINMINVALUE_ID, VELOCITY_ID));
+    midiInVelocity.MaxValue = apvts.getRawParameterValue(DEFCONCAT(MIDIINMAXVALUE_ID, VELOCITY_ID));
 
     
     presetManager = std::make_unique<Service::PresetManager>(apvts);
@@ -594,25 +607,19 @@ void RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midi
     auto messageType = midiMessage.isController() ? 1 : midiMessage.isNoteOn() ? 2 : 0;
     if(messageType == 0) return;
     
-    auto messageChannel = midiMessage.getChannel();
-    auto messageNumber = messageType == 1 ? midiMessage.getControllerNumber() : midiMessage.getNoteNumber();
+    //auto messageChannel = midiMessage.getChannel();
+    //auto messageNumber = messageType == 1 ? midiMessage.getControllerNumber() : midiMessage.getNoteNumber();
     auto messageValue = messageType == 1 ? midiMessage.getControllerValue() : midiMessage.getVelocity();
 
-    if(messageType == (int) *midiInVelocityMessageType
-       && messageNumber == (int) *midiInVelocityNumber
-       && messageValue >= (int) *midiInVelocityValueTreshold
-       && ((int) *midiInVelocityChannel == 0 || messageChannel == (int) *midiInVelocityChannel))
+    if(midiInVelocity.MidiMessageComplies(midiMessage))
     {
-        *noteVelocity = messageValue / 127.0;
+        *noteVelocity = (*midiInVelocity.MinValue + (*midiInVelocity.MaxValue - *midiInVelocity.MinValue) * messageValue / 127.0) / 127.0;
     }
 
     
     for(int i=0; i < MAX_PROGRESSIONSKNOBS;i++)
     {
-        if(messageType == (int) *midiInProgressionMessageType[i]
-           && messageNumber == (int) *midiInProgressionNumber[i]
-           && messageValue >= (int) *midiInProgressionValueTreshold[i]
-           && ((int) *midiInProgressionChannel[i] == 0 || messageChannel == (int) *midiInProgressionChannel[i]))
+        if(midiInProgression[i].MidiMessageComplies(midiMessage))
         {
             activeProgressionKnob = i;
         }

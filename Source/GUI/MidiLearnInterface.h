@@ -8,6 +8,8 @@
   ==============================================================================
 */
 
+#define NUMBERFILTER "0123456789"
+
 #pragma once
 #include <JuceHeader.h>
 #include "../PluginProcessor.h"
@@ -17,7 +19,8 @@
 //==============================================================================
 class MidiLearnInterface :
 public juce::ComboBox::Listener,
-public juce::Button::Listener
+public juce::Button::Listener,
+public juce::Slider::Listener
 {
 public:
     MidiLearnInterface(juce::Component* p)
@@ -35,34 +38,30 @@ public:
     //==============================================================================
     void comboBoxChanged(juce::ComboBox* combobox) override;
     void buttonClicked(juce::Button* button) override;
+    void sliderValueChanged(juce::Slider* slider) override;
 
     //==============================================================================
     // public properties
     //==============================================================================
-    juce::ComboBox cmbMidiInMessage;
-    juce::ComboBox cmbMidiInChannel;
-    juce::ComboBox cmbMidiInNumber;
-    juce::ComboBox cmbMidiInValue;
-
-    juce::Label lblMidiMessage;
-    juce::Label lblChannel;
-    juce::Label lblMidiNumber; //cc number or note number
-    juce::Label lblMidiValueTreshold; //control value or note velocity above wich the selector knob is active;
-
     static inline bool MidiSettingOn = false;
-    bool MidiLearnOn = false;
+    static inline bool  MidiLearnOn = false;
+    bool getSelected()
+    {
+        return selected;
+    }
+    void setSelected(bool value)
+    {
+        if(selected != value)
+        {
+            selected = value;
+            parent->repaint();
+        }
+    }
+
+    juce::ChangeBroadcaster onMidiLearnChanges;
+    
     bool MidiLearnNew();
 
-    juce::Colour ColourOff = juce::Colours::transparentBlack;
-    juce::Colour ColourMidiNotSet = juce::Colours::red;
-    juce::Colour ColourMidiSet = juce::Colours::purple;
-    float alphaMidiLearnOn = 0.8;
-    float alphaMidiLearnOff = 0.5;
-
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiMessageAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiInChannelAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiInNumberAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiInValueAttachment;
 
     void PaintMidiSettings(juce::Graphics& g)
     {
@@ -71,15 +70,35 @@ public:
 
     juce::Colour GetMidiActiveColour(juce::Colour colourNormal)
     {
-        auto alpha = MidiLearnOn ? alphaMidiLearnOn : alphaMidiLearnOff;
+        auto alpha = selected ? alphaMidiLearnOn : alphaMidiLearnOff;
         return MidiSettingOn ? (MidiLearnNew() ? ColourMidiNotSet.withAlpha(alpha) : ColourMidiSet.withAlpha(alpha)) : colourNormal;
     }
 
     void ShowMidiSettings();
 
-    
-private:
-    juce::Component* parent;
+protected:
     juce::TextButton selectButton;
+    juce::ComboBox cmbMidiInMessage;
+    juce::ComboBox cmbMidiInChannel;
+    juce::ComboBox cmbMidiInNumber;
+    juce::Slider sldMidiInMaxValue;
+    juce::Slider sldMidiInMinValue;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiMessageAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiInChannelAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbMidiInNumberAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldMidiInMinValueAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sldMidiInMaxValueAttachment;
+
+private:
+    bool selected = false;
+
+    juce::Component* parent;
+
+    juce::Colour ColourOff = juce::Colours::transparentBlack;
+    juce::Colour ColourMidiNotSet = juce::Colours::red;
+    juce::Colour ColourMidiSet = juce::Colours::purple;
+    float alphaMidiLearnOn = 0.8;
+    float alphaMidiLearnOff = 0.3;
 };
 

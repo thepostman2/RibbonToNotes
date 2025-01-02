@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "AtomicMidiInfo.h"
 #include "Service/PresetManager.h"
 
 #define DEFCONCAT(first, second) first second
@@ -30,6 +31,7 @@
 #define OCTAVES_NAME "Octaves"
 
 #define TOGGLEMIDI_NAME "Show midi controls"
+#define TOGGLEMIDILEARN_NAME "Midi learn"
 
 #define CHANNELIN_ID "channelin"
 #define CHANNELIN_NAME "Channel in"
@@ -56,17 +58,12 @@
 #define MIDIINCHANNEL_NAME "midiInChannel"
 #define MIDIINNUMBER_ID "midiInNumber"
 #define MIDIINNUMBER_NAME "midiInNumber"
-#define MIDIINVALUE_ID "midiInValue"
-#define MIDIINVALUE_NAME "midiInValue"
+#define MIDIINMINVALUE_ID "midiInMinValue"
+#define MIDIINMINVALUE_NAME "midiInMinValue"
+#define MIDIINMAXVALUE_ID "midiInMaxValue"
+#define MIDIINMAXVALUE_NAME "midiInMaxValue"
 
-#define MIDIINSKALTMESSAGETYPE_ID "midiInSKAltMessageType"
-#define MIDIINSKALTMESSAGETYPE_NAME "midiInSKAltMessageType"
-#define MIDIINSKALTCHANNEL_ID "midiInSKAltChannel"
-#define MIDIINSKALTCHANNEL_NAME "midiInSKAltChannel"
-#define MIDIINSKALTNUMBER_ID "midiInSKAltNumber"
-#define MIDIINSKALTNUMBER_NAME "midiInSKAltNumber"
-#define MIDIINSKALTVALUE_ID "midiInSKAltValue"
-#define MIDIINSKALTVALUE_NAME "midiInSKAltValue"
+#define PROGRESSION "Progression"
 
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
@@ -183,15 +180,8 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     std::atomic<float>* notesToPlay[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
 
-    std::atomic<float>*  midiInProgressionMessageType[MAX_PROGRESSIONSKNOBS];
-    std::atomic<float>*  midiInProgressionChannel[MAX_PROGRESSIONSKNOBS];
-    std::atomic<float>*  midiInProgressionNumber[MAX_PROGRESSIONSKNOBS];
-    std::atomic<float>*  midiInProgressionValueTreshold[MAX_PROGRESSIONSKNOBS];
-    
-    std::atomic<float>*  midiInVelocityMessageType;
-    std::atomic<float>*  midiInVelocityChannel;
-    std::atomic<float>*  midiInVelocityNumber;
-    std::atomic<float>*  midiInVelocityValueTreshold;
+    AtomicMidiInfo midiInProgression[MAX_PROGRESSIONSKNOBS];
+    AtomicMidiInfo midiInVelocity;
 
     
     juce::Array<int> notesPressed;
