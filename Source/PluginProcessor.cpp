@@ -90,17 +90,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
                                                                                1,
                                                                                chordsArray.size(),
                                                                                1));
-                    int chordBuildDefault = 1;//default only base note
+                    int chordBuildDefault = 0;//default only base note
                     int noteDefault = defaultNoteOrder[i] + 24 -1 + defaultOctave * 12;
 
                     for(int j=0;j<MAX_NOTES;j++)
                     {
                         params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{CHORDBUILDS_ID + std::to_string(prog) + "_" + std::to_string(i) + "_" + std::to_string(j),versionHint1},
                                                                                    CHORDBUILDS_NAME,
-                                                                                   -127,
+                                                                                   -128,
                                                                                    1278,
                                                                                    chordBuildDefault));
-                        chordBuildDefault = 0;//default only the base note
+                        chordBuildDefault = NONOTE;//default only the base note
                         
                         params.push_back(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{NOTESTOPLAY_ID 
                             + std::to_string(prog) + "_"
@@ -593,7 +593,7 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
     for(int j=0;j<MAX_NOTES;j++)
     {
         int note = (int) *notesToPlay[selectedAlt][selectedZone][j];
-        if(((int)(*chordNotes[selectedAlt][selectedZone][j]))==0) break;
+        if(((int)(*chordNotes[selectedAlt][selectedZone][j]))==NONOTE) break;
         auto message = juce::MidiMessage::noteOn(channel,note,*noteVelocity);
         processedMidi.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
         notesPressed.add(note);

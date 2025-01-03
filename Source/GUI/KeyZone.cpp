@@ -10,7 +10,6 @@
 
 #include "KeyZone.h"
 
-
 KeyZone::KeyZone ( RibbonToNotesAudioProcessor& p, int progressionid, int zoneid)
 : ZoneVisual(progressionid, zoneid),
 audioProcessor (p)
@@ -53,7 +52,7 @@ void KeyZone::CreateGui()
     for(int j=0;j<MAX_NOTES;j++)
     {
         chordBuildStr = chordBuildStr + std::to_string((int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j]);
-        if(j+1==MAX_NOTES || (int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j+1] == 0)
+        if(j+1==MAX_NOTES || (int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j+1] == NONOTE)
         {
             break;
         }
@@ -157,7 +156,7 @@ void KeyZone::cmbChordBuilderOnChange()
             {
                 int notenr = sldChordNotesHelp[j].getValue();
                 *audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j] = notenr;
-                if(notenr != 0)
+                if(notenr != NONOTE)
                 {
                     chord = chord + sep + std::to_string(notenr);
                     sep = ",";
@@ -197,8 +196,8 @@ void KeyZone::GetChordFromChordString()
         }
         else
         {
-            *audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j] = 0;
-            SetChordParameter(j,0);
+            *audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j] = NONOTE;
+            SetChordParameter(j,NONOTE);
         }
     }
 }

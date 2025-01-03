@@ -717,15 +717,15 @@ void RibbonToNotesAudioProcessorEditor::GetNoteNumbersForChord(int addOctaves, i
     for(int j=0;j<MAX_NOTES;j++)
     {
         int note = (int) *audioProcessor.chordNotes[alternative][zone][j];
-        if(note != 0)
+        if(note != NONOTE)
         {
-            if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
+            //if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
             int keynote = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
             if(keynote + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
             note = keynote + note + addOctaves * 12;
         }
         ribbonKeyZone[alternative][zone]->SetNoteParameter(j, note);//this is for saving it to the valuetreestate
-        *audioProcessor.notesToPlay[alternative][zone][j]=note;
+        *audioProcessor.notesToPlay[alternative][zone][j]= note == NONOTE ? 0 : note;
     }
 }
 //==============================================================================

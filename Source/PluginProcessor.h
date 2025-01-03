@@ -14,6 +14,8 @@
 
 #define DEFCONCAT(first, second) first second
 
+const int NONOTE = -128;
+
 #define MAX_PROGRESSIONS 6
 #define MAX_PROGRESSIONSKNOBS MAX_PROGRESSIONS+2
 #define MAX_NOTES 12
@@ -68,7 +70,7 @@
 const int defaultNoteOrder[MAX_NOTES] = {1,3,5,6,8,10,12,1,3,5,6,8};
 const juce::StringArray keysArray({"C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab","A","A#/Bb","B"});
 const juce::StringArray chordsArray({"None","Power","Major","Minor","Dominant 7","Minor 7","Major 7","Diminished", "Octave up", "Octave down", "Custom"});
-const juce::StringArray chordbuildsArray({"empty","1","1,8","1,5,8","1,4,8","1,5,8,11","1,4,8,11","1,5,8,12","1,4,7", "1,13", "1,-12"});
+const juce::StringArray chordbuildsArray({"empty","0","0,7","0,4,7","0,3,7","0,4,7,10","0,3,7,10","0,4,7,11","0,3,6", "0,12", "0,-12"});
 const juce::StringArray pitchModesArray({"Up" , "In Octave"});
 const juce::StringArray progressionArray({"I" , "II", "III", "IV", "V", "VI"});
 const juce::StringArray progressionKnobs({"I" , "II", "III", "IV", "V", "VI", "<", ">"});
