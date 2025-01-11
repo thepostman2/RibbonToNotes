@@ -118,7 +118,28 @@ void MidiLearnInterface::ShowMidiSettings()
     sldMidiInMaxValue.setVisible(MidiSettingOn);
     sldMidiInMinValue.setVisible(MidiSettingOn);
 }
-
+bool MidiLearnInterface::MidiLearnMessage(juce::MidiMessage message)
+{
+    bool Learned = false;
+    if(message.isController())
+    {
+        cmbMidiInMessage.setSelectedId(2, juce::sendNotification);
+        cmbMidiInNumber.setSelectedId(message.getControllerNumber()+1, juce::sendNotification);
+        Learned = true;
+    }
+    if(message.isNoteOn())
+    {
+        cmbMidiInMessage.setSelectedId(3, juce::sendNotification);
+        cmbMidiInNumber.setSelectedId(message.getNoteNumber()+1, juce::sendNotification);
+        Learned = true;
+    }
+    if(Learned)
+    {
+        cmbMidiInChannel.setSelectedId(message.getChannel()+1, juce::sendNotification);
+        MidiLearnOn = false;
+    }
+    return Learned;
+}
 bool MidiLearnInterface::MidiLearnNew()
 {
     return cmbMidiInMessage.getSelectedId() == 1 || (MidiLearnOn && selected);

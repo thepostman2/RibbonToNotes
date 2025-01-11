@@ -11,6 +11,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "LookAndFeelZoneButton.h"
+#include "MidiLearnInterface.h"
 
 //==============================================================================
 // base class for showing the zone. Red if active, black when not active
@@ -27,9 +28,10 @@ public:
     bool FillColourOn = false;
     int ZONE_ID;
     int PROGRESSION_ID;
-    juce::Colour ColourOn = juce::Colours::red;
+    juce::Colour ColourOn = findColour(juce::Slider::thumbColourId);
+    juce::Colour ColourMidiLearn = juce::Colours::red;
     juce::Colour ColourOff = juce::Colours::black;
-    float alpha = 0.5;
+    float alpha = 1;
     
     void PaintZoneVisual(juce::Graphics& g)
     {
@@ -45,7 +47,8 @@ public:
 
     juce::Colour KnobColour()
     {
-        return FillColourOn ? ColourOn.withAlpha(alpha) : ColourOff.withAlpha(alpha);
+        auto colour = MidiLearnInterface::MidiLearnOn ? ColourMidiLearn : ColourOn;
+        return FillColourOn ?  colour.withAlpha(alpha) : ColourOff.withAlpha(alpha);
     }
 
 private:

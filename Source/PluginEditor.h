@@ -70,12 +70,21 @@ private:
     void BuildChordsForAllProgressions();
 public:
     void BuildChords(int alternative);
+    int GetRelativeNoteNumber(int progression, int selectedzone, int notenumber);
     static void BuildChordsWrapper(void* audioProcessorEditor, int progression)
     {
         if(audioProcessorEditor != NULL)
         {
             static_cast<RibbonToNotesAudioProcessorEditor*>(audioProcessorEditor)->BuildChords(progression);
         }
+    }
+    static int GetRelativeNoteNumberWrapper(void* audioProcessorEditor, int progression, int selectedzone, int notenumber)
+    {
+        if(audioProcessorEditor != NULL)
+        {
+            return static_cast<RibbonToNotesAudioProcessorEditor*>(audioProcessorEditor)->GetRelativeNoteNumber(progression, selectedzone, notenumber);
+        }
+        return NONOTE;
     }
 private:
     void GetNoteNumbersForChord(int addOctaves, int progression, int zone, int note);

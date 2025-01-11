@@ -69,6 +69,7 @@ void RibbonToNotesAudioProcessorEditor::CreateRibbon()
             ribbonKeyZone[alt].add(new KeyZone(audioProcessor, alt, zone));
             ribbonKeyZone[alt][zone]->ribbonToNotesAudioProcessorEditor = this;
             ribbonKeyZone[alt][zone]->BuildChordsFuncP = BuildChordsWrapper;
+            ribbonKeyZone[alt][zone]->GetRelativeNoteNumberP = GetRelativeNoteNumberWrapper;
         }
     }
 }
@@ -263,6 +264,7 @@ void RibbonToNotesAudioProcessorEditor::AddListeners()
     sldOctave.addListener(this);
 
     toggleShowMidiLearnSettings.addListener(this);
+    toggleMidiLearn.addListener(this);
     
     cmbChannelIn.addListener(this);
     cmbChannelOut.addListener(this);
@@ -307,6 +309,7 @@ void RibbonToNotesAudioProcessorEditor::RemoveListeners()
     sldOctave.removeListener(this);
     
     toggleShowMidiLearnSettings.removeListener(this);
+    toggleMidiLearn.removeListener(this);
     
     cmbChannelIn.removeListener(this);
     cmbChannelOut.removeListener(this);
@@ -646,6 +649,10 @@ void RibbonToNotesAudioProcessorEditor::buttonClicked(juce::Button* button)
     {
         MidiLearnInterface::MidiSettingOn = button->getToggleState();
     }
+    if(button == &toggleMidiLearn)
+    {
+        MidiLearnInterface::MidiLearnOn = button->getToggleState();
+    }
 
     //check if one of the progression selection knobs is pressed
     if(auto castProgressionKnob = dynamic_cast<SelectionKnob*>(button))
@@ -710,6 +717,48 @@ void RibbonToNotesAudioProcessorEditor::BuildChords(int progression)
         GetNoteNumbersForChord(octave + addOctaves, progression, zone, key);
     }
 }
+int RibbonToNotesAudioProcessorEditor::GetRelativeNoteNumber(int progression, int selectedzone, int notenumber)
+{
+    int maxNote = 0;
+    int key = 0;
+    int octave = (int) *audioProcessor.octaves;
+    int addOctaves=0;
+
+    //pitchMode 0 = up
+    key = (int) *audioProcessor.selectedKeys[progression][selectedzone];
+        
+    //pitchMode 0 = up
+    for(int zone=0 ; zone < MAX_ZONES; zone++)
+    {
+        key = (int) *audioProcessor.selectedKeys[progression][zone];
+        
+        //pitchMode 0 = up
+        if(*audioProcessor.pitchMode == 0)
+        {
+            //if the notevalue is lower then the highest note, just add an octave to it.
+            if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
+            {
+                addOctaves++;
+            }
+            maxNote = key;
+        }
+        if(zone == selectedzone)
+        {
+            break;
+        }
+    }
+    int keynote = key + 24 - 1 + (octave + addOctaves) * 12;; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
+    int notediff = notenumber - keynote;
+    if(notediff > -128 && notediff < 128)
+    {
+        return notediff;
+    }
+    else
+    {
+        return NONOTE;
+    }
+}
+
 // calculate the notes to be played for a specific zone
 // since key equals to one instead of zero, the counting is a bit strange
 void RibbonToNotesAudioProcessorEditor::GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int key)
@@ -804,6 +853,29 @@ void RibbonToNotesAudioProcessorEditor::UpdateMidiLearnControls()
 {
     sldVelocity.setValue(*audioProcessor.noteVelocity, juce::dontSendNotification);
     sldVelocity.repaint();
+    if(MidiLearnInterface::MidiLearnOn)
+    {
+        if(MidiLearnInterface::MidiSettingOn)
+        {
+            midiLearnGroup.midiLearnMessage(audioProcessor.midiLearnBuffer);
+            toggleMidiLearn.setToggleState(MidiLearnInterface::MidiLearnOn, juce::sendNotification);
+        }
+        else
+        {
+            auto activeZone = audioProcessor.getActiveZone();
+            auto activeProgression = audioProcessor.getActiveProgression();
+
+            if(activeZone > 0)
+            {
+                bool keeplearning = ribbonKeyZone[activeProgression][activeZone-1]->midiLearnMessage(audioProcessor.midiLearnBuffer, activeZone-1);
+                audioProcessor.midiLearnBuffer.clear();
+                if(keeplearning == false)
+                {
+                    toggleMidiLearn.setToggleState(MidiLearnInterface::MidiLearnOn, juce::sendNotification);
+                }
+            }
+        }
+    }
 }
 //==============================================================================
 // Timer call back function. In this case only used to update the GUI when

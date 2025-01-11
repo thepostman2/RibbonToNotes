@@ -231,10 +231,66 @@ void KeyZone::BuildChords()
         BuildChordsFuncP(ribbonToNotesAudioProcessorEditor, PROGRESSION_ID);
     }
 }
+int KeyZone::GetRelativeNoteNumber(int selectedzone, int notenumber)
+{
+    if(ribbonToNotesAudioProcessorEditor != NULL && GetRelativeNoteNumberP != NULL)
+    {
+        return GetRelativeNoteNumberP(ribbonToNotesAudioProcessorEditor, PROGRESSION_ID, selectedzone, notenumber);
+    }
+    return NONOTE;
+}
 int KeyZone::Transposed()
 {
     return currentKey-prevKey;
 }
+
+bool KeyZone::midiLearnMessage(juce::MidiBuffer messagebuffer, int selectedzone)
+{
+    bool keeplearning = true;
+    for(const auto metadata : messagebuffer)
+    {
+        auto message = metadata.getMessage();
+        if(message.isNoteOn() && message.getVelocity() > 0)
+        {
+            auto notenumber  = GetRelativeNoteNumber(selectedzone, message.getNoteNumber());
+            LearnedNotes.add(notenumber);
+        }
+        if(message.isNoteOff() || message.isAllNotesOff() || (message.isNoteOn() && message.getVelocity() == 0))
+        {
+            int notenr = NONOTE;
+            LearnedNotes.sort();
+            juce::String chord;
+            juce::String sep = "";
+
+            for(int i=0 ; i < MAX_NOTES; i++)
+            {
+                if(i < LearnedNotes.size())
+                {
+                    notenr = LearnedNotes[i];
+                }
+                else
+                {
+                    notenr = NONOTE;
+                }
+                if(notenr != NONOTE)
+                {
+                    chord = chord + sep + std::to_string(notenr);
+                    sep = ",";
+                }
+            }
+            if(LearnedNotes.size() >0)
+            {
+                edtChordBuilder.setText(chord, juce::NotificationType::sendNotification);
+                EdtChordBuilderOnChange();
+            }
+            keeplearning = false;
+            MidiLearnInterface::MidiLearnOn = false;
+            LearnedNotes.clear();
+        }
+    }
+    return keeplearning;
+}
+
 //==============================================================================
 // listeners
 //==============================================================================

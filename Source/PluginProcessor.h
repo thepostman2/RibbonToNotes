@@ -115,7 +115,7 @@ public:
     
     void extracted(juce::MidiBuffer &midiMessages);
     
-void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -143,6 +143,7 @@ void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     double startTime;
     int lastCCValue;
     int lastChannel;
+    juce::MidiBuffer midiLearnBuffer;
 
     void PlayNextNote(juce::MidiBuffer &midiMessages);
     void AddNotesToPlayToBuffer(int ccval);

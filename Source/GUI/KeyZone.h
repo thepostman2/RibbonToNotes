@@ -41,8 +41,12 @@ public:
     void SetNoteParameter(int j, float value);
     bool is_validnotenumber(const juce::String& str);
     void BuildChords();
+    int GetRelativeNoteNumber(int selectedkey, int notenumber);
     void* ribbonToNotesAudioProcessorEditor;
     void (*BuildChordsFuncP)(void*, int progression_id);
+    int (*GetRelativeNoteNumberP)(void*, int progression_id, int selectedzone, int notenumber);
+
+    bool midiLearnMessage(juce::MidiBuffer messagebuffer, int selectedzone);
 
     //==============================================================================
     // listeners
@@ -50,6 +54,8 @@ public:
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
 
+    
+    
     //==============================================================================
     // public properties
     //==============================================================================
@@ -68,7 +74,8 @@ private:
     bool edtChordChanged;
     juce::Slider sldChordNotesHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
     juce::Slider sldNotesToPlayHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
-
+    juce::Array<int> LearnedNotes;
+    
 public:
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> cmbKeysAttachment;

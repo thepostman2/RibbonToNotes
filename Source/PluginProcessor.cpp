@@ -392,7 +392,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     {
         const auto message = metadata.getMessage();
         //auto time = metadata.samplePosition;
-        if(MidiLearnInterface::MidiSettingOn == false)
+        if(MidiLearnInterface::MidiSettingOn == false && MidiLearnInterface::MidiLearnOn == false)
         {
             if(message.isController() && message.getControllerNumber() == (int) *midiCC)
             {
@@ -403,6 +403,26 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
             {
                 SetControlByMidi(message);
                 notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+            }
+        }
+        else
+        {
+            if(MidiLearnInterface::MidiLearnOn)
+            {
+                midiLearnBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+            }
+            else
+            {
+                midiLearnBuffer.clear();
+            }
+            if(message.isNoteOff() || message.isAllNotesOff() || message.isNoteOn())
+            {
+                auto notemessageOrg = juce::MidiMessage(message);
+                notemessageOrg.setVelocity(0.0);// just in case the note was pressed before midi learn was switched on.
+                notesToPlayBuffer.addEvent(notemessageOrg, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+                auto notemessage = juce::MidiMessage(message);
+                notemessage.setChannel((int)*channelOut);
+                notesToPlayBuffer.addEvent(notemessage, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
             }
         }
     }

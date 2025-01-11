@@ -75,6 +75,7 @@ public:
     }
 
     void ShowMidiSettings();
+    bool MidiLearnMessage(juce::MidiMessage message);
 
 protected:
     juce::TextButton selectButton;

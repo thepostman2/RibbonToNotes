@@ -24,30 +24,11 @@ public:
         }
     }
 
-    void Add(MidiLearnInterface* obj)
-    {
-        auto addit = true;
-        for(int i=0; i < MidiLearnControls.size(); ++i)
-        {
-            if(MidiLearnControls[i] == obj)
-            {
-                addit = false;
-            }
-        }
-        if(addit)
-        {
-            obj->onMidiLearnChanges.addChangeListener(this);
-            MidiLearnControls.add(obj);
-        }
-    }
+    void Add(MidiLearnInterface* obj);
 
-    void changeListenerCallback(juce::ChangeBroadcaster * source) override
-    {
-        for(int i=0; i < MidiLearnControls.size(); ++i)
-        {
-            MidiLearnControls[i]->setSelected(&MidiLearnControls[i]->onMidiLearnChanges == source);
-        }
-    }
+    void changeListenerCallback(juce::ChangeBroadcaster * source) override;
+
+    bool midiLearnMessage(juce::MidiBuffer messagebuffer);
     
     private:
     juce::Array<MidiLearnInterface*> MidiLearnControls;
