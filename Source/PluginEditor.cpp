@@ -665,17 +665,20 @@ void RibbonToNotesAudioProcessorEditor::buttonClicked(juce::Button* button)
         }
     }
 
-    //check if one of the ribbonzone knobs is pressed
-    for(int i=0;i<MAX_ZONES;i++)
+    //check if one of the ribbonzone knobs is pressed (only if midisettings is off)
+    if(MidiLearnInterface::MidiSettingOn == false)
     {
-        if(auto castKeyZone = dynamic_cast<KeyZone*>(button))
+        for(int i=0;i<MAX_ZONES;i++)
         {
-            auto index = ribbonKeyZone[i].indexOf(castKeyZone);
-            if(index > -1)
+            if(auto castKeyZone = dynamic_cast<KeyZone*>(button))
             {
-                auto ccval = (*audioProcessor.splitValues[index] + *audioProcessor.splitValues[index+1])/2;
-                audioProcessor.AddNotesToPlayToBuffer(ccval);
-                return;
+                auto index = ribbonKeyZone[i].indexOf(castKeyZone);
+                if(index > -1)
+                {
+                    auto ccval = (*audioProcessor.splitValues[index] + *audioProcessor.splitValues[index+1])/2;
+                    audioProcessor.AddNotesToPlayToBuffer(ccval);
+                    return;
+                }
             }
         }
     }
@@ -786,9 +789,12 @@ void RibbonToNotesAudioProcessorEditor::ShowActiveAlternative()
     int activeProgressionKnob = audioProcessor.activeProgressionKnob;
     int activezones = (int) *audioProcessor.numberOfZones;
 
-    prevProgression.FillColourOn = activeProgressionKnob == MAX_PROGRESSIONS;
+    //only fill if midilearn is off or if midilearn is on and midisettings are on.
+    bool fillON = (MidiLearnInterface::MidiLearnOn && MidiLearnInterface::MidiSettingOn) || MidiLearnInterface::MidiLearnOn == false;
+    
+    prevProgression.FillColourOn = fillON && activeProgressionKnob == MAX_PROGRESSIONS;
     prevProgression.repaint();
-    nextProgression.FillColourOn = activeProgressionKnob == MAX_PROGRESSIONS+1;
+    nextProgression.FillColourOn = fillON && activeProgressionKnob == MAX_PROGRESSIONS+1;
     nextProgression.repaint();
     for(int alt=0;alt<MAX_PROGRESSIONS;alt++)
     {
@@ -797,7 +803,7 @@ void RibbonToNotesAudioProcessorEditor::ShowActiveAlternative()
             ribbonKeyZone[alt][zone]->setVisible(alt == activeProgressionKnob && zone < activezones);
             ribbonKeyZone[alt][zone]->setEnabled(alt == activeProgressionKnob && zone < activezones);
         }
-        selectProgressionKnobs[alt]->FillColourOn = alt == activeProgressionKnob;
+        selectProgressionKnobs[alt]->FillColourOn = fillON && alt == activeProgressionKnob;
         selectProgressionKnobs[alt]->repaint();
     }
     
@@ -832,7 +838,7 @@ void RibbonToNotesAudioProcessorEditor::ShowActiveAlternative()
 // Colors the selected zone when a user presses the ribbon
 void RibbonToNotesAudioProcessorEditor::ShowRibbonZone(int area)
 {
-    if(area == 0)
+    if(area == 0 && MidiLearnInterface::MidiSettingOn == false)
     {
         ribbonZeroZone.FillColourOn = true;
     }
