@@ -858,6 +858,7 @@ void RibbonToNotesAudioProcessorEditor::UpdateMidiLearnControls()
         if(MidiLearnInterface::MidiSettingOn)
         {
             midiLearnGroup.midiLearnMessage(audioProcessor.midiLearnBuffer);
+            audioProcessor.midiLearnBuffer.clear();
             toggleMidiLearn.setToggleState(MidiLearnInterface::MidiLearnOn, juce::sendNotification);
         }
         else
