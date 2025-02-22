@@ -53,6 +53,7 @@ PresetPanel(Service::PresetManager& pm):presetManager(pm)
             deleteButton.setBounds(bounds.reduced(4));
         }
         
+
     private:
         void buttonClicked(juce::Button* button) override
         {

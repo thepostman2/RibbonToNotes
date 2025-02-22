@@ -36,6 +36,7 @@ public:
     //==============================================================================
     void cmbChordBuilderOnChange();
     void EdtChordBuilderOnChange();
+    void SetChordStringText();
     void GetChordFromChordString();
     void SetChordParameter(int j, float value);
     void SetNoteParameter(int j, float value);

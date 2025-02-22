@@ -48,20 +48,8 @@ void KeyZone::CreateGui()
     edtChordBuilder.setEnabled(true);
     edtChordBuilder.setEditable(true);
     edtChordBuilder.setColour (juce::Label::outlineColourId, juce::Colours::grey);
-    juce::String chordBuildStr;
-    for(int j=0;j<MAX_NOTES;j++)
-    {
-        chordBuildStr = chordBuildStr + std::to_string((int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j]);
-        if(j+1==MAX_NOTES || (int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j+1] == NONOTE)
-        {
-            break;
-        }
-        else
-        {
-            chordBuildStr = chordBuildStr + ",";
-        }
-    }
-    edtChordBuilder.setText(chordBuildStr, juce::dontSendNotification);
+    SetChordStringText();
+    
     edtChordChanged=false;
     
     for(int j=0;j<MAX_NOTES;j++)
@@ -138,6 +126,8 @@ void KeyZone::setVisible(bool visible)
 
 void KeyZone::cmbChordBuilderOnChange()
 {
+    if(Service::PresetManager::PresetLoading ==  true) return;
+
     int selectedChord = cmbChord.getSelectedId();
 
     if(selectedChord < chordbuildsArray.size())
@@ -155,7 +145,7 @@ void KeyZone::cmbChordBuilderOnChange()
             for(int j=0;j<MAX_NOTES;j++)
             {
                 int notenr = sldChordNotesHelp[j].getValue();
-                *audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j] = notenr;
+                audioProcessor.UpdateParameter(notenr, CHORDBUILDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j));
                 if(notenr != NONOTE)
                 {
                     chord = chord + sep + std::to_string(notenr);
@@ -175,11 +165,30 @@ void KeyZone::cmbChordBuilderOnChange()
 
 void KeyZone::EdtChordBuilderOnChange()
 {
+    if(Service::PresetManager::PresetLoading ==  true) return;
     edtChordChanged = true;
-    *audioProcessor.selectedChord[PROGRESSION_ID][ZONE_ID] = chordbuildsArray.size();//set selectedChord to "Custom"
+    audioProcessor.UpdateParameter(chordbuildsArray.size(), CHORDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID));//set selectedChord to "Custom"
     GetChordFromChordString();
     BuildChords();
     cmbChord.setSelectedId(chordbuildsArray.size(), juce::sendNotificationSync);//set cmbChord to "Custom"
+}
+
+void KeyZone::SetChordStringText()
+{
+    juce::String chordBuildStr;
+    for(int j=0;j<MAX_NOTES;j++)
+    {
+        chordBuildStr = chordBuildStr + std::to_string((int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j]);
+        if(j+1==MAX_NOTES || (int)*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j+1] == NONOTE)
+        {
+            break;
+        }
+        else
+        {
+            chordBuildStr = chordBuildStr + ",";
+        }
+    }
+    edtChordBuilder.setText(chordBuildStr, juce::dontSendNotification);;
 }
 
 void KeyZone::GetChordFromChordString()
@@ -191,12 +200,10 @@ void KeyZone::GetChordFromChordString()
         if(j<chordStringArray.size() && is_validnotenumber(chordStringArray[j]))
         {
             auto value =chordStringArray[j].getIntValue();
-            *audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j] =value;
             SetChordParameter(j,value);
         }
         else
         {
-            *audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j] = NONOTE;
             SetChordParameter(j,NONOTE);
         }
     }
@@ -204,11 +211,11 @@ void KeyZone::GetChordFromChordString()
 
 void KeyZone::SetChordParameter(int j, float value)
 {
-    sldChordNotesHelp[j].setValue(value, juce::sendNotificationSync);
+    audioProcessor.UpdateParameter(value, CHORDBUILDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j));
 }
 void KeyZone::SetNoteParameter(int j, float value)
 {
-    sldNotesToPlayHelp[j].setValue(value, juce::sendNotificationSync);
+    audioProcessor.UpdateParameter(value, NOTESTOPLAY_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j));
 }
 
 bool KeyZone::is_validnotenumber(const juce::String& str)
@@ -296,10 +303,16 @@ bool KeyZone::midiLearnMessage(juce::MidiBuffer messagebuffer, int selectedzone)
 //==============================================================================
 void KeyZone::sliderValueChanged(juce::Slider* slider)
 {
+    if(Service::PresetManager::PresetLoading ==  true)
+    {
+        SetChordStringText();
+    }
 }
 
 void KeyZone::comboBoxChanged(juce::ComboBox* combobox)
 {
+    if(Service::PresetManager::PresetLoading ==  true) return;
+
     if(combobox == &cmbKey)
     {
         prevKey = currentKey;

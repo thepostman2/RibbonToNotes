@@ -165,6 +165,7 @@ public:
 //    void BuildChordsForAllProgressions();
 //    void BuildChords(int alternative);
 //    void GetNoteNumbersForChord(int addOctaves, int progression, int zone, int note);
+    void UpdateParameter(int value, juce::String parameterID);
     bool HasChanged(int ccval);
     
 

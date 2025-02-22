@@ -22,7 +22,8 @@ public:
     static const File defaultDirectory;
     static const String extension;
     static const String presetNameProperty;
-    
+    static inline bool PresetLoading = false;
+
     PresetManager(AudioProcessorValueTreeState&);
     
     void savePreset(const String& presetName);

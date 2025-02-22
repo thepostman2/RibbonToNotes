@@ -61,6 +61,7 @@ private:
     // listeners
     //==============================================================================
     void sliderValueChanged(juce::Slider* slider) override;
+    void sliderDragEnded(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* combobox) override;
     void buttonClicked(juce::Button* button) override;
     
@@ -91,7 +92,7 @@ private:
     //==============================================================================
     // Update functions for the visuals
     //==============================================================================
-    void ShowActiveAlternative();
+    void ShowActiveProgression();
     void ShowRibbonZone(int area);
     void UpdateMidiLearnControls();
 
@@ -139,7 +140,6 @@ private:
     MidiLearnGroup midiLearnGroup;
 
     // utility variables
-    int lastNumberOfZones=6;
     int numberOfSplits(){return ((int)(*audioProcessor.numberOfZones))-1;}
     int rootKey[MAX_PROGRESSIONS];
     bool splitValuesSetFromCode = false;

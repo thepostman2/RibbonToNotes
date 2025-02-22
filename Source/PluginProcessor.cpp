@@ -636,12 +636,27 @@ void RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midi
         *noteVelocity = (*midiInVelocity.MinValue + (*midiInVelocity.MaxValue - *midiInVelocity.MinValue) * messageValue / 127.0) / 127.0;
     }
 
-    
+    int ap = ((int) *activeProgression);
     for(int i=0; i < MAX_PROGRESSIONSKNOBS;i++)
     {
         if(midiInProgression[i].MidiMessageComplies(midiMessage))
         {
-            activeProgressionKnob = i;
+            if(i < MAX_PROGRESSIONS)
+            {
+                ap = i;
+            }
+            else if(i == MAX_PROGRESSIONS)
+            {
+                ap--;
+                ap = ap < 0 ? MAX_PROGRESSIONS-1 : ap;
+            }
+            else
+            {
+                ap++;
+                ap = ap < MAX_PROGRESSIONS ? ap : 0;
+            }
+            UpdateParameter(ap, ACTIVEPROGRESSION_ID);
+            break;
         }
     }
 }
@@ -649,63 +664,14 @@ void RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midi
 //==============================================================================
 // Utility functions
 //==============================================================================
-// build a chord for each zone based on the key and the chord notes
+void RibbonToNotesAudioProcessor::UpdateParameter(int value, juce::String parameterID)
+{
+    auto pParam = apvts.getParameter(parameterID);
+    pParam->beginChangeGesture();
+    pParam->setValueNotifyingHost(pParam->convertTo0to1(value));
+    pParam->endChangeGesture();
+}
 
-//void RibbonToNotesAudioProcessor::BuildChordsForAllProgressions()
-//{
-//    for(int prog=0;prog<MAX_PROGRESSIONS;prog++)
-//    {
-//        BuildChords(prog);
-//    }
-//}
-//
-//void RibbonToNotesAudioProcessor::BuildChords(int progression)
-//{
-//    int maxNote = 0;
-//    int key = 0;
-//    int octave = (int) *octaves;
-//    int addOctaves=0;
-//    
-//    for(int zone=0 ; zone < MAX_ZONES; zone++)
-//    {
-//        key = (int) *selectedKeys[progression][zone];
-//        
-//        //pitchMode 0 = up
-//        if(*pitchMode == 0)
-//        {
-//            //if the notevalue is lower then the highest note, just add an octave to it.
-//            if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
-//            {
-//                addOctaves++;
-//            }
-//            maxNote = key;
-//        }
-//        GetNoteNumbersForChord(octave + addOctaves, progression, zone, key);
-//    }
-//}
-//
-//// calculate the notes to be played for a specific zone
-//// since key equals to one instead of zero, the counting is a bit strange
-//void RibbonToNotesAudioProcessor::GetNoteNumbersForChord(int addOctaves, int alternative, int zone, int key)
-//{
-//    for(int j=0;j<MAX_NOTES;j++)
-//    {
-//        int note = (int) *chordNotes[alternative][zone][j];
-//        if(note == 0)
-//        {
-//            *notesToPlay[alternative][zone][j] = note;
-//            
-//        }
-//        else
-//        {
-//            if(note > 0) note = note - 1; //offset for positive notes is +1. Correct it here.
-//            int keynote = key + 24 - 1; //Since addoctaves starts at -2, offset for key is -24. Also there is an offset of +1, because C corresponds to 1 in the list instead of 0. Both are corrected here.
-//            if(keynote + note > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
-//            *notesToPlay[alternative][zone][j]= (keynote + note + addOctaves * 12);
-//        }
-//    }
-//}
-// determine if the cc value has changed to another zone
 bool RibbonToNotesAudioProcessor::HasChanged(int ccval)
 {
     for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
