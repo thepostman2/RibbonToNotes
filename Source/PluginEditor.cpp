@@ -865,7 +865,21 @@ void RibbonToNotesAudioProcessorEditor::UpdateMidiLearnControls()
         {
             auto activeZone = audioProcessor.getActiveZone();
             auto activeProgression = audioProcessor.getActiveProgression();
-
+            if(activeZone == 0)
+            {
+                for(const auto metadata : audioProcessor.midiLearnBuffer)
+                {
+                    auto message = metadata.getMessage();
+                    if(message.isController())
+                    {
+                        audioProcessor.UpdateParameter(message.getControllerNumber(), MIDICC_ID);
+                        MidiLearnInterface::MidiLearnOn = false;
+                        toggleMidiLearn.setToggleState(MidiLearnInterface::MidiLearnOn, juce::sendNotification);
+                        break;
+                    }
+                }
+                audioProcessor.midiLearnBuffer.clear();
+            }
             if(activeZone > 0)
             {
                 bool keeplearning = ribbonKeyZone[activeProgression][activeZone-1]->midiLearnMessage(audioProcessor.midiLearnBuffer, activeZone-1);
