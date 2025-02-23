@@ -57,10 +57,6 @@ void KeyZone::CreateGui()
         addAndMakeVisible(sldChordNotesHelp[j]);
         sldChordNotesHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
         sldChordNotesHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldChordNotesHelp[j]);
-
-        addAndMakeVisible(sldNotesToPlayHelp[j]);
-        sldNotesToPlayHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
-        sldNotesToPlayHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, NOTESTOPLAY_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldNotesToPlayHelp[j]);
     }
 }
 
@@ -71,7 +67,6 @@ void KeyZone::AddListeners()
     for(int j=0;j<MAX_NOTES;j++)
     {
         sldChordNotesHelp[j].addListener(this);
-        sldNotesToPlayHelp[j].addListener(this);
     }
     edtChordBuilder.onTextChange = [this] {EdtChordBuilderOnChange();};
 }
@@ -83,7 +78,6 @@ void KeyZone::RemoveListeners()
     for(int j=0;j<MAX_NOTES;j++)
     {
         sldChordNotesHelp[j].removeListener(this);
-        sldNotesToPlayHelp[j].removeListener(this);
     }
     edtChordBuilder.onTextChange = nullptr;
 }

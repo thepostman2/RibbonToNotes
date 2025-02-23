@@ -74,7 +74,6 @@ private:
     
     bool edtChordChanged;
     juce::Slider sldChordNotesHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
-    juce::Slider sldNotesToPlayHelp[MAX_NOTES];//this is not visible, but helps to save and load the chord notes to and from a preset.
     juce::Array<int> LearnedNotes;
     
 public:

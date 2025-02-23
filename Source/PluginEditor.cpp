@@ -768,7 +768,11 @@ void RibbonToNotesAudioProcessorEditor::GetNoteNumbersForChord(int addOctaves, i
             if(keynote + notenr > 8 && addOctaves > 7) addOctaves = 7; //do not go past G8
             notenr = keynote + notenr + addOctaves * 12;
         }
-        ribbonKeyZone[progression][zone]->SetNoteParameter(note, notenr == NONOTE ? 0 : notenr);//this is for saving it to the valuetreestate
+        auto notevalue = notenr == NONOTE ? 0 : notenr;
+        if(notevalue != *audioProcessor.notesToPlay[progression][zone][note])
+        {
+            audioProcessor.UpdateParameter(notevalue, NOTESTOPLAY_ID + std::to_string(progression) + "_" + std::to_string(zone) + "_" + std::to_string(note));
+        }
      }
 }
 //==============================================================================
