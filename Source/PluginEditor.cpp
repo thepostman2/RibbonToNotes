@@ -22,13 +22,14 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
+    Service::PresetManager::PresetLoading = true;
     CreateProgressionSelectorKnobs();
     CreateRibbon();
     CreateGui();
     setSize (800, 400);
-    RedistributeSplitRanges(true);
     AddListeners();
     startTimerHz(12);
+    Service::PresetManager::PresetLoading = false;
 }
 
 //==============================================================================
@@ -555,7 +556,6 @@ void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 void RibbonToNotesAudioProcessorEditor::sliderDragEnded(juce::Slider* slider)
 {
     auto zones = (int) sldNumberOfZones.getValue();
-    int lastSplit = zones - 1;
 
     if(splitValuesSetFromCode == true)
     {
