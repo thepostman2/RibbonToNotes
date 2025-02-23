@@ -57,12 +57,10 @@ void KeyZone::CreateGui()
         addAndMakeVisible(sldChordNotesHelp[j]);
         sldChordNotesHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
         sldChordNotesHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, CHORDBUILDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldChordNotesHelp[j]);
-        sldChordNotesHelp[j].setValue(*audioProcessor.chordNotes[PROGRESSION_ID][ZONE_ID][j], juce::sendNotificationSync);
 
         addAndMakeVisible(sldNotesToPlayHelp[j]);
         sldNotesToPlayHelp[j].setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
         sldNotesToPlayHelpAttachment[j] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, NOTESTOPLAY_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID) + "_" + std::to_string(j), sldNotesToPlayHelp[j]);
-        sldNotesToPlayHelp[j].setValue((int)*audioProcessor.notesToPlay[PROGRESSION_ID][ZONE_ID][j], juce::sendNotificationSync);
     }
 }
 
@@ -76,7 +74,6 @@ void KeyZone::AddListeners()
         sldNotesToPlayHelp[j].addListener(this);
     }
     edtChordBuilder.onTextChange = [this] {EdtChordBuilderOnChange();};
-    //cmbChord.onChange = [this] {cmbChordBuilderOnChange();};
 }
 
 void KeyZone::RemoveListeners()
@@ -163,7 +160,7 @@ void KeyZone::SetSelectedChord()
 
 void KeyZone::EdtChordBuilderOnChange()
 {
-    if(Service::PresetManager::PresetLoading ==  true) return;
+    if(Service::PresetManager::PresetLoading !=  Service::ePresetLoading::notLoading) return;
     edtChordChanged = true;
     audioProcessor.UpdateParameter(chordbuildsArray.size(), CHORDS_ID + std::to_string(PROGRESSION_ID) + "_" + std::to_string(ZONE_ID));//set selectedChord to "Custom"
     GetChordFromChordString();
@@ -301,15 +298,11 @@ bool KeyZone::midiLearnMessage(juce::MidiBuffer messagebuffer, int selectedzone)
 //==============================================================================
 void KeyZone::sliderValueChanged(juce::Slider* slider)
 {
-    if(Service::PresetManager::PresetLoading ==  true)
-    {
-        SetChordStringText();
-    }
 }
 
 void KeyZone::comboBoxChanged(juce::ComboBox* combobox)
 {
-    if(Service::PresetManager::PresetLoading ==  true) return;
+    if(Service::PresetManager::PresetLoading !=  Service::ePresetLoading::notLoading) return;
 
     if(combobox == &cmbKey)
     {

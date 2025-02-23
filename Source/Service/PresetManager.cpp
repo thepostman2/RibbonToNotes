@@ -79,11 +79,11 @@ void PresetManager::loadPreset(const juce::String& presetName)
         return;
     }
     //convert presetfile (XML) => (ValueTree)
-    PresetLoading = true;
+    PresetLoading = ePresetLoading::startLoading;
     XmlDocument xmlDocument(presetFile);
     const auto valueTreeToLoad = ValueTree::fromXml(*xmlDocument.getDocumentElement());
     valueTreeState.replaceState(valueTreeToLoad);
-    
+
     for(int i = 0 ; i<valueTreeToLoad.getNumChildren();++i)
     {
         const auto parameterChildToLoad = valueTreeToLoad.getChild(i);
@@ -94,8 +94,8 @@ void PresetManager::loadPreset(const juce::String& presetName)
             parameterTree.copyPropertiesFrom(parameterChildToLoad, nullptr);
         }
     }
+    PresetLoading = ePresetLoading::finishLoading;
     currentPreset.setValue(presetName);
-    PresetLoading = false;
 }
 int PresetManager::loadNextPreset()
 {

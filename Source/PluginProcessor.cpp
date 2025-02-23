@@ -252,7 +252,6 @@ RibbonToNotesAudioProcessor::RibbonToNotesAudioProcessor()
     midiInVelocity.Number = apvts.getRawParameterValue(DEFCONCAT(MIDIINNUMBER_ID, VELOCITY_ID));
     midiInVelocity.MinValue = apvts.getRawParameterValue(DEFCONCAT(MIDIINMINVALUE_ID, VELOCITY_ID));
     midiInVelocity.MaxValue = apvts.getRawParameterValue(DEFCONCAT(MIDIINMAXVALUE_ID, VELOCITY_ID));
-
     
     presetManager = std::make_unique<Service::PresetManager>(apvts);
 }

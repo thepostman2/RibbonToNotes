@@ -22,14 +22,14 @@ RibbonToNotesAudioProcessorEditor::RibbonToNotesAudioProcessorEditor ( RibbonToN
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    Service::PresetManager::PresetLoading = true;
+    Service::PresetManager::PresetLoading = Service::ePresetLoading::startLoading;
     CreateProgressionSelectorKnobs();
     CreateRibbon();
     CreateGui();
     setSize (800, 400);
     AddListeners();
-    startTimerHz(12);
-    Service::PresetManager::PresetLoading = false;
+    Service::PresetManager::PresetLoading = Service::ePresetLoading::finishLoading;
+    startTimerHz(1000/DelayTimeMS);
 }
 
 //==============================================================================
@@ -534,23 +534,14 @@ void RibbonToNotesAudioProcessorEditor::RedistributeSplitRanges(bool initSplitVa
 //==============================================================================
 void RibbonToNotesAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
-    if(Service::PresetManager::PresetLoading == true)
+    if(Service::PresetManager::PresetLoading == Service::ePresetLoading::startLoading)
     {
         //make sure the new values are not prevented from loading due to range settings
-        if(sldSplitValues[0].getRange().getEnd() != 129)
+        for(int i=0;i < MAX_ZONES;i++)
         {
-            for(int i=0;i < MAX_ZONES;i++)
-            {
-                sldSplitValues[i].setRange(0, 129, 1);
-            }
+            sldSplitValues[i].setRange(0, 129, 1);
         }
-        //update the number of zones on screen as well.
-        if(slider == &sldNumberOfZones)
-        {
-            auto zones = (int) sldNumberOfZones.getValue();
-            audioProcessor.UpdateParameter(zones, NUMBEROFZONES_ID);//necessary if preset is loaded
-            resized();
-        }
+        Service::PresetManager::PresetLoading = Service::ePresetLoading::isLoading;
     }
 }
 void RibbonToNotesAudioProcessorEditor::sliderDragEnded(juce::Slider* slider)
@@ -703,13 +694,14 @@ void RibbonToNotesAudioProcessorEditor::BuildChords(int progression)
     int key = 0;
     int octave = (int) *audioProcessor.octaves;
     int addOctaves=0;
+    int pitchMode = (int) *audioProcessor.pitchMode;
     
     for(int zone=0 ; zone < MAX_ZONES; zone++)
     {
         key = (int) *audioProcessor.selectedKeys[progression][zone];
         
         //pitchMode 0 = up
-        if(*audioProcessor.pitchMode == 0)
+        if(pitchMode == 0)
         {
             //if the notevalue is lower then the highest note, just add an octave to it.
             if(key <= maxNote && (key + ( octave + addOctaves + 1) * 12) < 128)
@@ -777,7 +769,7 @@ void RibbonToNotesAudioProcessorEditor::GetNoteNumbersForChord(int addOctaves, i
             notenr = keynote + notenr + addOctaves * 12;
         }
         ribbonKeyZone[progression][zone]->SetNoteParameter(note, notenr == NONOTE ? 0 : notenr);//this is for saving it to the valuetreestate
-    }
+     }
 }
 //==============================================================================
 // Update functions for the visuals
@@ -805,6 +797,21 @@ void RibbonToNotesAudioProcessorEditor::ShowActiveProgression()
         selectProgressionKnobs[alt]->FillColourOn = fillON && alt == activeProgression;
         selectProgressionKnobs[alt]->repaint();
     }
+    if(Service::PresetManager::PresetLoading == Service::ePresetLoading::finishLoading)
+    {
+        for(int prog=0; prog < MAX_PROGRESSIONS; prog++)
+        {
+            for(int zone=0; zone < MAX_ZONES; zone++)
+            {
+                ribbonKeyZone[prog][zone]->SetChordStringText();
+            }
+        }
+        //update the number of zones on screen.
+        auto zones = (int) sldNumberOfZones.getValue();
+        audioProcessor.UpdateParameter(zones, NUMBEROFZONES_ID);//necessary if preset is loaded
+        resized();
+        Service::PresetManager::PresetLoading = Service::ePresetLoading::notLoading;
+    }
 }
 
 // Colors the selected zone when a user presses the ribbon
@@ -825,13 +832,14 @@ void RibbonToNotesAudioProcessorEditor::ShowRibbonZone(int area)
         ribbonKeyZone[activeProgression][zone]->FillColourOn = zone == (area-1);
         ribbonKeyZone[activeProgression][zone]->repaint();
     }
-    if(Service::PresetManager::PresetLoading == false && sldSplitValues[0].getRange().getEnd() == 129)
+    if(Service::PresetManager::PresetLoading == Service::ePresetLoading::notLoading && sldSplitValues[0].getRange().getEnd() == 129)
     {
         int zones = (int) *audioProcessor.numberOfZones;
         for(int i=0;i < MAX_ZONES;i++)
         {
             auto min = i == 0 ? 0 : i >= zones ? 127 : sldSplitValues[i-1].getRange().getEnd() + 1;
             auto max = i < zones-1 ? sldSplitValues[i].getValue() + (int)((sldSplitValues[i+1].getValue() - sldSplitValues[i].getValue())/2) : 128;
+            max = fmax(max, min+1);
             sldSplitValues[i].setRange(min, max, 1);
         }
     }

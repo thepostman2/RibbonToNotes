@@ -16,13 +16,15 @@ namespace Service
 {
 using namespace juce;
 
+typedef enum {notLoading, startLoading, isLoading, finishLoading} ePresetLoading;
+
 class PresetManager : ValueTree::Listener
 {
 public:
     static const File defaultDirectory;
     static const String extension;
     static const String presetNameProperty;
-    static inline bool PresetLoading = false;
+    static inline ePresetLoading PresetLoading = ePresetLoading::notLoading;
 
     PresetManager(AudioProcessorValueTreeState&);
     
