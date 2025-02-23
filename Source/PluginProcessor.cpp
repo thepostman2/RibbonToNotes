@@ -69,9 +69,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
     int stepSize = 127/DEFAULT_NUMBEROFZONES;
     bool enabled = true;
 
-    
-//    std::atomic<float>* notesToPlay[MAX_PROGRESSIONS][MAX_ZONES][MAX_NOTES];
-
     for(int prog=0;prog<MAX_PROGRESSIONSKNOBS;prog++)
     {
         if(prog<MAX_PROGRESSIONS)

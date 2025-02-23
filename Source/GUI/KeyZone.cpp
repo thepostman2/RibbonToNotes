@@ -124,10 +124,8 @@ void KeyZone::setVisible(bool visible)
     edtChordBuilder.setVisible(visible);
 }
 
-void KeyZone::cmbChordBuilderOnChange()
+void KeyZone::SetSelectedChord()
 {
-    if(Service::PresetManager::PresetLoading ==  true) return;
-
     int selectedChord = cmbChord.getSelectedId();
 
     if(selectedChord < chordbuildsArray.size())
@@ -322,7 +320,7 @@ void KeyZone::comboBoxChanged(juce::ComboBox* combobox)
     }
     if(combobox == &cmbChord)
     {
-        cmbChordBuilderOnChange();
+        SetSelectedChord();
         return;
     }
 }

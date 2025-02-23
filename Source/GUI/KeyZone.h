@@ -34,7 +34,7 @@ public:
     //==============================================================================
     // Apply changes when controls are changed
     //==============================================================================
-    void cmbChordBuilderOnChange();
+    void SetSelectedChord();
     void EdtChordBuilderOnChange();
     void SetChordStringText();
     void GetChordFromChordString();
