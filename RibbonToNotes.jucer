@@ -3,9 +3,39 @@
 <JUCERPROJECT id="RPDDm9" name="RibbonToNotes" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               companyName="PJP" pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginProducesMidiOut,pluginWantsMidiIn"
-              pluginAUMainType="'aumi'">
+              pluginAUMainType="'aumi'" pluginFormats="buildAU,buildVST3">
   <MAINGROUP id="iA8r3J" name="RibbonToNotes">
     <GROUP id="{3266B9C5-B255-1F66-15A8-6F8809D4B69A}" name="Source">
+      <FILE id="pQukiq" name="AtomicMidiInfo.h" compile="0" resource="0"
+            file="Source/AtomicMidiInfo.h"/>
+      <GROUP id="{4A658A51-7557-01E3-4F96-9F8D2CC4DEB3}" name="Service">
+        <FILE id="pJ0NKF" name="PresetManager.cpp" compile="1" resource="0"
+              file="Source/Service/PresetManager.cpp"/>
+        <FILE id="GH7Vxo" name="PresetManager.h" compile="0" resource="0" file="Source/Service/PresetManager.h"/>
+      </GROUP>
+      <GROUP id="{9A127437-252B-99AB-A46A-6947BBCD0E0F}" name="GUI">
+        <FILE id="uTdp7s" name="KeyZone.cpp" compile="1" resource="0" file="Source/GUI/KeyZone.cpp"/>
+        <FILE id="wr85Hq" name="KeyZone.h" compile="0" resource="0" file="Source/GUI/KeyZone.h"/>
+        <FILE id="chw1hm" name="LookAndFeelZoneButton.h" compile="0" resource="0"
+              file="Source/GUI/LookAndFeelZoneButton.h"/>
+        <FILE id="MXQL2d" name="MidiLearnGroup.cpp" compile="1" resource="0"
+              file="Source/GUI/MidiLearnGroup.cpp"/>
+        <FILE id="XU1y5C" name="MidiLearnGroup.h" compile="0" resource="0"
+              file="Source/GUI/MidiLearnGroup.h"/>
+        <FILE id="hc2cGz" name="MidiLearnInterface.cpp" compile="1" resource="0"
+              file="Source/GUI/MidiLearnInterface.cpp"/>
+        <FILE id="JkL3UU" name="MidiLearnInterface.h" compile="0" resource="0"
+              file="Source/GUI/MidiLearnInterface.h"/>
+        <FILE id="sB4D4H" name="PresetPanel.h" compile="0" resource="0" file="Source/GUI/PresetPanel.h"/>
+        <FILE id="frwQgA" name="SelectionKnob.cpp" compile="1" resource="0"
+              file="Source/GUI/SelectionKnob.cpp"/>
+        <FILE id="Pzf68L" name="SelectionKnob.h" compile="0" resource="0" file="Source/GUI/SelectionKnob.h"/>
+        <FILE id="u2OCFe" name="SliderMidiLearn.h" compile="0" resource="0"
+              file="Source/GUI/SliderMidiLearn.h"/>
+        <FILE id="DUbICp" name="ZoneVisual.h" compile="0" resource="0" file="Source/GUI/ZoneVisual.h"/>
+        <FILE id="vEXFgi" name="ZoneVisualMidiLearn.h" compile="0" resource="0"
+              file="Source/GUI/ZoneVisualMidiLearn.h"/>
+      </GROUP>
       <FILE id="IbJPvz" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Jmehfd" name="PluginProcessor.h" compile="0" resource="0"
@@ -19,7 +49,8 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="RibbonToNotes"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="RibbonToNotes" macOSDeploymentTarget="13"
+                       osxCompatibility="13 SDK" customXcodeFlags="-Wl,-ld_classic"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="RibbonToNotes"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
