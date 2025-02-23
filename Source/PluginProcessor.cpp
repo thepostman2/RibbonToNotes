@@ -417,7 +417,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
                 notemessageOrg.setVelocity(0.0);// just in case the note was pressed before midi learn was switched on.
                 notesToPlayBuffer.addEvent(notemessageOrg, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
                 auto notemessage = juce::MidiMessage(message);
-                notemessage.setChannel((int)*channelOut);
+                notemessage.setChannel(fmax((int)*channelOut,1));
                 notesToPlayBuffer.addEvent(notemessage, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
             }
         }
