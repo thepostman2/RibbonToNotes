@@ -362,6 +362,46 @@ bool RibbonToNotesAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
 }
 #endif
 
+//return true if de controller message is the selected controller message.
+bool RibbonToNotesAudioProcessor::PlayMidi(int &ccval, int &channel, const juce::MidiMessage &message)
+{
+    if(message.isController() && message.getControllerNumber() == (int) *midiCC)
+    {
+        ccval = message.getControllerValue();
+        channel = message.getChannel();
+        return true;
+    }
+    //not a ccval linked to the ribbon
+    else
+    {
+        if(SetControlByMidi(message) == false)
+        {
+            notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        }
+    }
+    return false;
+}
+
+void RibbonToNotesAudioProcessor::LearnMidi(const juce::MidiMessage &message) 
+{
+    if(MidiLearnInterface::MidiLearnOn)
+    {
+        midiLearnBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+    }
+    else
+    {
+        midiLearnBuffer.clear();
+    }
+    if(message.isNoteOff() || message.isAllNotesOff() || message.isNoteOn())
+    {
+        auto notemessageOrg = juce::MidiMessage(message);
+        notemessageOrg.setVelocity(0.0);// just in case the note was pressed before midi learn was switched on.
+        notesToPlayBuffer.addEvent(notemessageOrg, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        auto notemessage = juce::MidiMessage(message);
+        notemessage.setChannel(fmax((int)*channelOut,1));
+        notesToPlayBuffer.addEvent(notemessage, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+    }
+}
 
 //==============================================================================
 void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
@@ -370,7 +410,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     //jassert (buffer.getNumChannels() == 0);
     
     // however we use the buffer to get timing information
-    //auto numSamples = buffer.getNumSamples();
+    auto numSamples = buffer.getNumSamples();
     
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
@@ -383,6 +423,7 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         
     int ccval = lastCCValue;
     int channel = lastChannel;
+    bool ccPlayNotes = false;
     //filter the cc mesagges of the selected midiCC
     for(const auto metadata : midiMessages)
     {
@@ -390,42 +431,21 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         //auto time = metadata.samplePosition;
         if(MidiLearnInterface::MidiSettingOn == false && MidiLearnInterface::MidiLearnOn == false)
         {
-            if(message.isController() && message.getControllerNumber() == (int) *midiCC)
+            //ccval linked to the ribbon?
+            if(PlayMidi(ccval, channel, message))
             {
-                ccval = message.getControllerValue();
-                channel = message.getChannel();
-            }
-            else
-            {
-                SetControlByMidi(message);
-                notesToPlayBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+                ccPlayNotes = true;
             }
         }
         else
         {
-            if(MidiLearnInterface::MidiLearnOn)
-            {
-                midiLearnBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
-            }
-            else
-            {
-                midiLearnBuffer.clear();
-            }
-            if(message.isNoteOff() || message.isAllNotesOff() || message.isNoteOn())
-            {
-                auto notemessageOrg = juce::MidiMessage(message);
-                notemessageOrg.setVelocity(0.0);// just in case the note was pressed before midi learn was switched on.
-                notesToPlayBuffer.addEvent(notemessageOrg, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
-                auto notemessage = juce::MidiMessage(message);
-                notemessage.setChannel(fmax((int)*channelOut,1));
-                notesToPlayBuffer.addEvent(notemessage, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
-            }
+            LearnMidi(message);
         }
     }
     midiMessages.clear();
 
     //play notes or stop playing notes based on the cc value
-    if(HasChanged(ccval))
+    if(ccPlayNotes && HasChanged(ccval))
     {
         AddNotesToPlayToBuffer(ccval, channel, notesToPlayBuffer);
     }
@@ -435,25 +455,37 @@ void RibbonToNotesAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     // so adding the notes one by one solves this problem
     // Mind you that processblock fires each sample time, so for the user
     // it is as if the notes are played immediately.
-    PlayNextNote(midiMessages);
+    PlayNextMidiMessages(midiMessages,0,numSamples);
 }
 
 // plays the first of the buffered notes, and removes it from the buffer
-void RibbonToNotesAudioProcessor::PlayNextNote(juce::MidiBuffer &midiMessages)
+void RibbonToNotesAudioProcessor::PlayNextMidiMessages(juce::MidiBuffer &midiMessages,
+                                               const int startSample,
+                                               const int numSamples)
 {
     juce::MidiBuffer tmpBuffer;
     int i = 0;
+
+    const int firstEventToAdd = notesToPlayBuffer.getFirstEventTime();
+    const double scaleFactor = numSamples / (double) (notesToPlayBuffer.getLastEventTime() + 1 - firstEventToAdd);
+
     for(const auto metadata : notesToPlayBuffer)
     {
+        const auto pos = juce::jlimit (0, numSamples - 1, juce::roundToInt ((metadata.samplePosition - firstEventToAdd) * scaleFactor));
         auto message = metadata.getMessage();
-        if(i<1)
+        
+        //workaround to avoid problems in Blue Cat's Patchwork. Not to happy with this, because it introduces
+        //unecessary latency. That is why I only apply it for small buffers. With large buffer sizes, the latency gets
+        //to much noticeable.
+        if(i<1 || numSamples > 256)
         {
-            // first message of the buffer is excecuted
-            midiMessages.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+            // add message to be excecuted
+            midiMessages.addEvent (message, startSample + pos);
         }
         else
         {
-            // other messages are copied to temporary buffer
+            // other messages are not executed but copied to temporary buffer. This is needed for Blue Cat's Patchwork
+            // In Logic it is not a problem to have a buffer with multiple messages.
             tmpBuffer.addEvent(message, juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime);
         }
         i++;
@@ -618,18 +650,17 @@ void RibbonToNotesAudioProcessor::AddSentNotesOn(juce::MidiBuffer& processedMidi
 //==============================================================================
 // Select progression
 //==============================================================================
-void RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midiMessage)
+bool RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midiMessage)
 {
     auto messageType = midiMessage.isController() ? 1 : midiMessage.isNoteOn() ? 2 : 0;
-    if(messageType == 0) return;
-    
-    //auto messageChannel = midiMessage.getChannel();
-    //auto messageNumber = messageType == 1 ? midiMessage.getControllerNumber() : midiMessage.getNoteNumber();
-    auto messageValue = messageType == 1 ? midiMessage.getControllerValue() : midiMessage.getVelocity();
-
+    if(messageType == 0) return false;
+ 
+    //controller value that sets the midi velocity?
     if(midiInVelocity.MidiMessageComplies(midiMessage))
     {
+        auto messageValue = messageType == 1 ? midiMessage.getControllerValue() : midiMessage.getVelocity();
         *noteVelocity = (*midiInVelocity.MinValue + (*midiInVelocity.MaxValue - *midiInVelocity.MinValue) * messageValue / 127.0) / 127.0;
+        return true;
     }
 
     int ap = ((int) *activeProgression);
@@ -652,9 +683,10 @@ void RibbonToNotesAudioProcessor::SetControlByMidi(const juce::MidiMessage &midi
                 ap = ap < MAX_PROGRESSIONS ? ap : 0;
             }
             UpdateParameter(ap, ACTIVEPROGRESSION_ID);
-            break;
+            return true;
         }
     }
+    return false;
 }
 
 //==============================================================================
@@ -670,23 +702,7 @@ void RibbonToNotesAudioProcessor::UpdateParameter(int value, juce::String parame
 
 bool RibbonToNotesAudioProcessor::HasChanged(int ccval)
 {
-    for(int i=0 ; i < ((int)(*numberOfZones)) ;i++)
-    {
-        if(lastCCValue <= *splitValues[i])
-        {
-            if(i == 0 && ccval <= *splitValues[i])
-            {
-                return false;
-            }
-            if(i > 0 && ccval <= *splitValues[i])
-            {
-                return (ccval > *splitValues[i-1] == false);
-            }
-            else
-            {
-                return true;
-            }
-        }
-    }
-    return true;
+    int zoneUpper = (int) *splitValues[activeZone];
+    int zoneLower = activeZone > 0 ? (int) *splitValues[activeZone-1] : 0;
+    return ccval > zoneUpper || ccval < zoneLower;
 }
