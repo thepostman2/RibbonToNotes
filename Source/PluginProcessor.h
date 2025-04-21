@@ -115,9 +115,11 @@ public:
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 #endif
     
-    void extracted(juce::MidiBuffer &midiMessages);
+    bool PlayMidi(int &ccval, int &channel, const juce::MidiMessage &message);
     
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void LearnMidi(const juce::MidiMessage &message);
+    
+void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -147,7 +149,9 @@ public:
     int lastChannel;
     juce::MidiBuffer midiLearnBuffer;
 
-    void PlayNextNote(juce::MidiBuffer &midiMessages);
+    void PlayNextMidiMessages(juce::MidiBuffer &midiMessages,
+                      const int startSample,
+                      const int numSamples);
     void AddNotesToPlayToBuffer(int ccval);
     void AddNotesToPlayToBuffer(int ccval, int channel, juce::MidiBuffer &midiMessages);
     void AddSentAllNotesOff(juce::MidiBuffer& processedMidi, int channel);
@@ -157,7 +161,7 @@ public:
     //==============================================================================
     // Select progression
     //==============================================================================
-    void SetControlByMidi(const juce::MidiMessage &midiMessage);
+    bool SetControlByMidi(const juce::MidiMessage &midiMessage);
 
     void extracted(int &addOctaves, int alternative, int &key, int &maxNote, int octave, int zone);
     
@@ -204,6 +208,7 @@ public:
 private:
     std::unique_ptr<Service::PresetManager> presetManager;
     int activeZone = 0;
+    int midiPosition;
     juce::MidiBuffer notesToPlayBuffer;
     int previousSampleNumber = 0;
 
