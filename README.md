@@ -1,6 +1,6 @@
 #RibbonToNotes
 
-This is midi effect plugin (based on JUCE).
+This is midi effect plugin (based on JUCE v8.0.4).
 
 Purpose: Change midi controller message into note message. 
 
