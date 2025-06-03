@@ -8,7 +8,6 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include <Carbon/Carbon.h>
 
 //==============================================================================
 juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout()
